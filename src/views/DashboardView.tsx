@@ -1,18 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   Building2, AlertTriangle, GitMerge, Clock, CheckCircle2, 
-  ArrowUpRight, ShieldAlert, FileText, ChevronRight, Sparkles, Scale, Users, UploadCloud, Layers
+  ArrowUpRight, ShieldAlert, FileText, ChevronRight, Sparkles, Scale, Users, 
+  UploadCloud, Layers, Download, X, AlertCircle, FileSpreadsheet
 } from 'lucide-react';
+import { CsvParseResult } from '../services/csvParser';
 
 export const DashboardView: React.FC = () => {
   const { 
     complaints, alerts, coordinationGroups, institutions, 
     setCurrentView, setSelectedComplaint, setSelectedInstitution,
-    setActiveAlertForCoordination, setSihDemoStep, importSyntheticCSV
+    setActiveAlertForCoordination, setSihDemoStep, importSyntheticCSV,
+    importUploadedCsv, getSampleCsvText
   } = useApp();
 
-  const [importNotice, setImportNotice] = useState<string | null>(null);
+  const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
+  const [csvResult, setCsvResult] = useState<CsvParseResult | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const pendingAlerts = alerts.filter(a => a.status === 'Pending Review');
   const activeComplaints = complaints.filter(c => c.status !== 'Disposed');
@@ -25,10 +31,47 @@ export const DashboardView: React.FC = () => {
   const abCount = complaints.filter(c => c.receivingBureau.includes('Approval')).length;
   const roCount = complaints.filter(c => c.receivingBureau.includes('Regional')).length;
 
-  const handleCsvImport = () => {
+  const handleFileProcess = (file: File) => {
+    if (!file.name.endsWith('.csv')) {
+      alert('Please select a valid .csv file.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      if (content) {
+        const result = importUploadedCsv(content);
+        setCsvResult(result);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileProcess(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent(getSampleCsvText());
+    const link = document.createElement('a');
+    link.setAttribute('href', csvContent);
+    link.setAttribute('download', 'AICTE_Samanvay_Sample_Complaints.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleLoadSyntheticPreset = () => {
     const count = importSyntheticCSV();
-    setImportNotice(`Successfully ingested ${count} synthetic complaint records into Samanvay overlay layer without data re-entry!`);
-    setTimeout(() => setImportNotice(null), 5000);
+    setCsvResult({
+      accepted: new Array(count).fill(null) as any,
+      rejected: [],
+      totalRows: count
+    });
   };
 
   return (
@@ -46,17 +89,17 @@ export const DashboardView: React.FC = () => {
             One Institution. Connected Cases. Coordinated Action.
           </h2>
           <p className="text-sm text-slate-300 leading-relaxed">
-            An overlay layer on existing Regulation Bureau (RB) and PGRC systems. Resolves cases to a single institution profile, detects overlaps across 3 levels (Co-activity, Issue, Action), and intercepts conflicting actions before they happen.
+            An overlay layer on existing Regulation Bureau (RB) and PGRC systems. Resolves cases to a single institution profile, detects overlaps across 3 levels (Co-activity, Issue, Action), and intercepts conflicting actions through a Pre-Action Check before they happen.
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
           <button
-            onClick={handleCsvImport}
+            onClick={() => setIsCsvModalOpen(true)}
             className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg transition-all text-xs"
           >
             <UploadCloud className="w-4 h-4" />
-            <span>Import CSV / Synthetic Data</span>
+            <span>CSV Ingestion (Upload / Sample)</span>
           </button>
           <button
             onClick={() => {
@@ -71,14 +114,119 @@ export const DashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* CSV Ingestion Banner */}
-      {importNotice && (
-        <div className="p-3.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl text-xs flex items-center justify-between shadow-sm animate-in fade-in">
-          <div className="flex items-center gap-2 font-medium">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>{importNotice}</span>
+      {/* CSV Ingestion Modal */}
+      {isCsvModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 animate-in zoom-in-95 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+                <h3 className="font-bold text-base text-slate-900">
+                  Case Ingestion Overlay (CSV File Ingestion & Validation)
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsCsvModalOpen(false);
+                  setCsvResult(null);
+                }}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Demonstrates the <strong>no re-entry overlay architecture</strong>. Ingest complaint datasets via file upload, validate mandatory fields and AICTE Permanent IDs against the registry, or load the pre-calibrated synthetic demonstration batch.
+            </p>
+
+            {/* Drag and Drop Zone */}
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+              onDragLeave={() => setDragActive(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`p-6 border-2 border-dashed rounded-xl text-center cursor-pointer transition ${
+                dragActive ? 'border-emerald-500 bg-emerald-50' : 'border-slate-300 hover:border-slate-400 bg-slate-50'
+              }`}
+            >
+              <UploadCloud className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+              <span className="text-xs font-bold text-slate-700 block">
+                Click to browse or drag & drop a .csv file here
+              </span>
+              <span className="text-[11px] text-slate-500 mt-1 block">
+                Columns: CaseID, ReferenceNumber, AICTEPermanentID, InstitutionName, Bureau, Category, Description
+              </span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    handleFileProcess(e.target.files[0]);
+                  }
+                }}
+                className="hidden"
+              />
+            </div>
+
+            {/* Ingestion Results Feedback */}
+            {csvResult && (
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+                <div className="flex items-center justify-between font-bold">
+                  <span className="text-emerald-700 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Accepted: {csvResult.accepted.length} valid cases ingested</span>
+                  </span>
+                  {csvResult.rejected.length > 0 && (
+                    <span className="text-rose-600 flex items-center gap-1.5">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>Rejected: {csvResult.rejected.length} rows</span>
+                    </span>
+                  )}
+                </div>
+
+                {csvResult.rejected.length > 0 && (
+                  <div className="mt-2 max-h-32 overflow-y-auto space-y-1 text-[11px]">
+                    {csvResult.rejected.map((rej, idx) => (
+                      <div key={idx} className="p-1.5 bg-rose-50 border border-rose-200 text-rose-800 rounded">
+                        Line {rej.line}: {rej.reason}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Alternative Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200 text-xs">
+              <button
+                onClick={handleDownloadTemplate}
+                className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-semibold"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download Sample CSV Template</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleLoadSyntheticPreset}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition"
+                >
+                  Load Synthetic Dataset Preset
+                </button>
+                <button
+                  onClick={() => {
+                    setIsCsvModalOpen(false);
+                    setCsvResult(null);
+                  }}
+                  className="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold rounded-lg transition"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
           </div>
-          <span className="text-[10px] text-emerald-700 font-mono">NO RE-ENTRY REQUIRED</span>
         </div>
       )}
 
@@ -147,7 +295,7 @@ export const DashboardView: React.FC = () => {
             {activeComplaints.length}
           </div>
           <div className="text-[11px] text-slate-500 mt-1">
-            Active Investigations
+            Active Inquiries
           </div>
         </div>
 
@@ -160,7 +308,7 @@ export const DashboardView: React.FC = () => {
             {overdueComplaints.length}
           </div>
           <div className="text-[11px] text-rose-600 font-medium mt-1">
-            Configurable Threshold
+            Sample Configurable SLA
           </div>
         </div>
 
@@ -199,7 +347,7 @@ export const DashboardView: React.FC = () => {
             {disposedComplaints.length}
           </div>
           <div className="text-[11px] text-emerald-600 font-medium mt-1">
-            Full Audit Recorded
+            Recorded in Audit Trail
           </div>
         </div>
       </div>

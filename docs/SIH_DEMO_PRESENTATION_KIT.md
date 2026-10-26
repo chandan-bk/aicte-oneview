@@ -11,7 +11,9 @@
 
 ## 1. Executive Summary & Positioning
 
-AICTE Samanvay is an **overlay on existing systems** (Regulation Bureau, PGRC, Approval Bureau), **not a replacement portal**. Officers do not re-enter data. It ingests cases via API/DB sync (prototype: CSV/Excel), resolves them to one verified institution profile, detects overlaps across three distinct levels, and warns officers through a **Pre-Action Check** before they duplicate or contradict another Bureau's action.
+AICTE Samanvay is an **overlay on existing systems** (Regulation Bureau, PGRC, Approval Bureau), **not a replacement portal**. Officers do not re-enter data. It ingests cases via API/DB sync (prototype supports **real CSV file upload & validation** as well as 1-click synthetic datasets), resolves them to one verified institution profile, detects overlaps across three distinct levels, and warns officers through a **Pre-Action Check** before they duplicate or contradict another Bureau's action.
+
+The prototype matching engine uses an explainable rule-based overlap model with multilingual synonym matching across English, Hindi, and Hinglish. Integration of server-side transformer embeddings (LaBSE / multilingual-e5) is designed for production deployment following pilot calibration.
 
 AI recommends; authorized officials always decide. Nothing is automatically merged, closed, or blocked.
 
@@ -19,10 +21,10 @@ AI recommends; authorized officials always decide. Nothing is automatically merg
 
 ## 2. Three-Level Overlap Engine
 
-| Level | Question | Method | Output |
+| Level | Question | Method (Prototype) | Output |
 | :--- | :--- | :--- | :--- |
-| **L1 Co-Activity** | Are multiple Bureaus active on this institution? | Deterministic rules, always-on | *"Potential Overlapping Cases – Coordination Required"* |
-| **L2 Related Issue** | Is it the same or a related issue? | Rules & taxonomy first, plus multilingual embeddings (LaBSE / multilingual-e5) for Hindi, English & Hinglish | Possible Duplicate / Related / Same institution but unrelated |
+| **L1 Co-Activity** | Are multiple Bureaus active on this institution? | Deterministic rules (always-on) | *"Potential Overlapping Cases – Coordination Required"* |
+| **L2 Related Issue** | Is it the same or a related issue? | Rules & grievance domain taxonomy + multilingual synonym matching (English, Hindi, Hinglish) | Possible Duplicate / Related / Same institution but unrelated |
 | **L3 Action Conflict** | Are actions duplicated or contradictory? | Explicit rules over a defined action vocabulary | Pre-Action Warning / Conflict Advisory |
 
 ### Defined Action Vocabulary:
@@ -39,7 +41,11 @@ AI recommends; authorized officials always decide. Nothing is automatically merg
 
 Before an officer issues a notice, requests documents, or orders an inspection, the Pre-Action Check displays prior active actions by other Bureaus on the same institution:
 - *"Advisory: Regulation Bureau already requested 3-year fee ledgers on 18 Oct 2026. Use Shared Document Registry to ask the institution once."*
-- Advisory only: the officer retains full discretion to proceed, modify the action, or coordinate.
+- **Action Pathways:**
+  1. *Consolidate via Shared Document Registry (Ask Once)*
+  2. *Modify Proposed Directive*
+  3. *Proceed with Independent Notice (Override with Justification)*
+- **Advisory Disclaimer:** The Pre-Action Check inspects known prior recorded actions. The absence of an alert is not proof that an action is free of conflict. Bureau officials retain statutory discretion.
 
 ---
 

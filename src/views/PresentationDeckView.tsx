@@ -158,32 +158,32 @@ export const PresentationDeckView: React.FC = () => {
             <div className="p-4 bg-slate-800/80 rounded-xl border border-slate-700 space-y-1.5">
               <span className="text-xs font-bold text-emerald-400 block">Prototype (Built & Demonstrable):</span>
               <p className="text-slate-300 text-[11px] leading-relaxed">
-                CSV import, Institution 360, L1/L2 alerts with explainable reasons, pre-action check, Coordination Workspace + audit log, and SLA dashboard.
+                React + TypeScript overlay, real CSV file upload & validation, Institution 360, rule-based 3-level overlap engine with multilingual synonyms, Pre-Action Check advisory, Coordination Workspace + SHA-256 hash chaining, and localStorage persistence.
               </p>
             </div>
 
             <div className="p-4 bg-slate-800/80 rounded-xl border border-slate-700 space-y-1.5">
-              <span className="text-xs font-bold text-purple-400 block">Roadmap (Post-Pilot):</span>
+              <span className="text-xs font-bold text-purple-400 block">Roadmap (Post-Pilot Architecture):</span>
               <p className="text-slate-300 text-[11px] leading-relaxed">
-                Live API adapters to RB/PGRC databases, pre-action API inside existing officer tools, Institution Attention Indicator, and SMS/email notifications.
+                Persistent Python FastAPI backend with PostgreSQL (+ pgvector) vector database, live API/DB sync adapters to RB and PGRC systems, production server-side RBAC, and SMS/email alerts.
               </p>
             </div>
           </div>
 
           <div className="text-[11px] text-slate-400 bg-white/5 p-3 rounded-lg border border-white/10 flex items-center justify-between">
-            <span><strong>Stack:</strong> React, TypeScript, Tailwind, Recharts | FastAPI, PostgreSQL + pgvector | RapidFuzz, Multilingual Embeddings</span>
+            <span><strong>Prototype:</strong> React, TypeScript, Tailwind, Recharts, Rule-Based Multilingual Overlap Engine | <strong>Roadmap:</strong> FastAPI, pgvector</span>
             <span className="text-amber-400 font-mono">100% On-Premise Capable</span>
           </div>
         </div>
       ),
       bullets: [
-        'Stack: React + TypeScript, Tailwind, Recharts; Python FastAPI; PostgreSQL + pgvector.',
-        'Matching: RapidFuzz and rule engine; multilingual embeddings (LaBSE / multilingual-e5).',
+        'Architecture: Overlay design on top of existing RB and PGRC systems with zero re-entry.',
+        'Matching: Rule-based overlap engine with multilingual synonym dictionary (English, Hindi, Hinglish); embeddings planned for pilot.',
         'Flow: CSV/Excel import → Validate → Institution resolution → L1 → L2 → L3 → Alert.',
-        'Pre-action check: checks prior Bureau actions before notice dispatch.',
-        'Coordination Workspace: links cases, proposes lead Bureau, logs decisions.',
-        'Prototype (built): import, Institution 360, L1/L2 alerts, pre-action check, workspace, SLA.',
-        'Roadmap: live API adapters, pre-action API inside existing tools, notifications.'
+        'Pre-action check: flags recorded prior Bureau actions before notice dispatch.',
+        'Coordination Workspace: links cases (never merge), proposes lead Bureau, shared document registry.',
+        'Prototype (demonstrated): CSV upload/parser with validation, Institution 360, L1-L3 rule engine, Pre-Action Check, SHA-256 audit chaining.',
+        'Roadmap: persistent FastAPI backend, PostgreSQL + pgvector, live API adapters, server-side authentication.'
       ]
     },
     {

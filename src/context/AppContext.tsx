@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   Institution, Complaint, OverlapAlert, CoordinationGroup, 
   CaseAction, AuditLogEntry, UserProfile, CoordinationDecision, BureauType, ComplaintStatus,
@@ -9,7 +9,11 @@ import {
   INITIAL_ALERTS, INITIAL_COORDINATION_GROUPS, INITIAL_ACTIONS, INITIAL_AUDIT_LOGS, SYNTHETIC_CSV_DATA 
 } from '../data/mockData';
 import { evaluate3LevelOverlap, checkPreActionAdvisory } from '../services/overlapEngine';
+import { computeAuditHash } from '../services/crypto';
+import { parseAndValidateCsv, CsvParseResult, generateSampleCsv } from '../services/csvParser';
 import confetti from 'canvas-confetti';
+
+const STORAGE_KEY = 'aicte_samanvay_v3_state';
 
 interface AppContextType {
   institutions: Institution[];
@@ -41,10 +45,12 @@ interface AppContextType {
     remarks: string, 
     directives: string[],
     leadBureau: BureauType
-  ) => void;
+  ) => boolean;
   updateComplaintStatus: (complaintId: string, status: ComplaintStatus, remarks: string, actionType?: ActionVocabulary) => void;
   evaluatePreActionCheck: (action: ActionVocabulary, complaint: Complaint) => PreActionCheckAdvisory | null;
   importSyntheticCSV: () => number;
+  importUploadedCsv: (csvContent: string) => CsvParseResult;
+  getSampleCsvText: () => string;
   addSharedDocumentToGroup: (groupId: string, docTitle: string) => void;
   resetToSihBaseline: () => void;
   loadSihPresetComplaint: () => Partial<Complaint>;
@@ -53,12 +59,23 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [institutions, setInstitutions] = useState<Institution[]>(MOCK_INSTITUTIONS);
-  const [complaints, setComplaints] = useState<Complaint[]>(INITIAL_COMPLAINTS);
-  const [alerts, setAlerts] = useState<OverlapAlert[]>(INITIAL_ALERTS);
-  const [coordinationGroups, setCoordinationGroups] = useState<CoordinationGroup[]>(INITIAL_COORDINATION_GROUPS);
-  const [caseActions, setCaseActions] = useState<CaseAction[]>(INITIAL_ACTIONS);
-  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(INITIAL_AUDIT_LOGS);
+  // Try loading from localStorage for persistence across reloads
+  const loadInitialState = <T,>(key: string, fallback: T): T => {
+    try {
+      const stored = localStorage.getItem(`${STORAGE_KEY}_${key}`);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {
+      // fallback
+    }
+    return fallback;
+  };
+
+  const [institutions, setInstitutions] = useState<Institution[]>(() => loadInitialState('institutions', MOCK_INSTITUTIONS));
+  const [complaints, setComplaints] = useState<Complaint[]>(() => loadInitialState('complaints', INITIAL_COMPLAINTS));
+  const [alerts, setAlerts] = useState<OverlapAlert[]>(() => loadInitialState('alerts', INITIAL_ALERTS));
+  const [coordinationGroups, setCoordinationGroups] = useState<CoordinationGroup[]>(() => loadInitialState('groups', INITIAL_COORDINATION_GROUPS));
+  const [caseActions, setCaseActions] = useState<CaseAction[]>(() => loadInitialState('actions', INITIAL_ACTIONS));
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(() => loadInitialState('audit', INITIAL_AUDIT_LOGS));
   
   const [currentUser, setCurrentUser] = useState<UserProfile>(MOCK_USERS[0]);
   const [currentView, setCurrentView] = useState<string>('dashboard');
@@ -71,16 +88,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [sihDemoStep, setSihDemoStep] = useState<number>(1);
   const [isDemoGuideOpen, setIsDemoGuideOpen] = useState<boolean>(true);
 
-  // Helper to append immutable audit log
+  // Sync to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(`${STORAGE_KEY}_institutions`, JSON.stringify(institutions));
+      localStorage.setItem(`${STORAGE_KEY}_complaints`, JSON.stringify(complaints));
+      localStorage.setItem(`${STORAGE_KEY}_alerts`, JSON.stringify(alerts));
+      localStorage.setItem(`${STORAGE_KEY}_groups`, JSON.stringify(coordinationGroups));
+      localStorage.setItem(`${STORAGE_KEY}_actions`, JSON.stringify(caseActions));
+      localStorage.setItem(`${STORAGE_KEY}_audit`, JSON.stringify(auditLogs));
+    } catch (e) {
+      // ignore quota exceeded
+    }
+  }, [institutions, complaints, alerts, coordinationGroups, caseActions, auditLogs]);
+
+  // True Cryptographic SHA-256 Audit Logger
   const addAuditLog = (
     action: string, 
     entityType: AuditLogEntry['entityType'], 
     entityId: string, 
     details: string
   ) => {
+    const timestamp = new Date().toISOString();
+    const prevHash = auditLogs.length > 0 ? auditLogs[0].hash : 'GENESIS-BLOCK-AICTE-SAMANVAY';
+    const computedHash = computeAuditHash(timestamp, currentUser.name, action, entityId, details, prevHash);
+
     const newLog: AuditLogEntry = {
       id: `AUD-${Date.now().toString().slice(-4)}`,
-      timestamp: new Date().toISOString(),
+      timestamp,
       actor: currentUser.name,
       actorRole: currentUser.role,
       actorBureau: currentUser.bureau,
@@ -88,8 +123,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       entityType,
       entityId,
       details,
-      hash: `SHA256:${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 10)}`
+      hash: computedHash,
+      previousHash: prevHash
     };
+
     setAuditLogs(prev => [newLog, ...prev]);
   };
 
@@ -117,13 +154,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       expectedDisposalDate: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0],
       lastActionType: 'Notice Issued',
       lastActionDate: new Date().toISOString().split('T')[0],
-      lastActionSummary: 'Complaint imported into AICTE Samanvay coordination overlay.',
+      lastActionSummary: 'Complaint ingested into AICTE Samanvay coordination overlay.',
       nextActionRequired: 'Pending inter-bureau overlap scrutiny and desk assignment.',
       supportingDocsCount: complaintData.supportingDocsCount || 2,
       isOverdue: false
     };
 
-    // Run 3-Level Overlap Detection
     const detectedAlert = evaluate3LevelOverlap(fullComplaint, complaints, institution);
 
     if (detectedAlert) {
@@ -190,16 +226,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return advisory;
   };
 
-  // Record a formal Coordination Decision
+  // Record a formal Coordination Decision (Guards against duplicate execution)
   const recordCoordinationDecision = (
     alertId: string,
     decision: CoordinationDecision,
     remarks: string,
     directives: string[],
     leadBureau: BureauType
-  ) => {
+  ): boolean => {
     const alert = alerts.find(a => a.id === alertId);
-    if (!alert) return;
+    if (!alert) return false;
+
+    // Check if already reviewed
+    if (alert.status === 'Reviewed & Coordinated') {
+      return false;
+    }
 
     const groupNum = `CG-00${coordinationGroups.length + 8}`;
     const newGroup: CoordinationGroup = {
@@ -288,8 +329,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         origin: { y: 0.6 }
       });
     } catch (e) {
-      // test environment catch
+      // test environment
     }
+
+    return true;
   };
 
   const addSharedDocumentToGroup = (groupId: string, docTitle: string) => {
@@ -358,68 +401,76 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  // CSV/Excel Ingestion (Prototype requirement)
-  const importSyntheticCSV = (): number => {
-    const lines = SYNTHETIC_CSV_DATA.trim().split('\n');
-    let imported = 0;
-    // Skip header line
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i];
-      if (!line) continue;
-      const parts = line.split(',');
-      if (parts.length >= 6) {
-        const id = parts[0];
-        // If already exists, skip
-        if (complaints.some(c => c.id === id)) continue;
+  // Real Uploaded CSV Ingestion & Validation
+  const importUploadedCsv = (csvContent: string): CsvParseResult => {
+    const parseResult = parseAndValidateCsv(csvContent, institutions, complaints);
 
-        const newComp: Complaint = {
-          id: parts[0],
-          referenceNumber: parts[1],
-          aictePermanentId: parts[2],
-          institutionId: 'INST-001',
-          institutionName: parts[3],
-          receivingBureau: parts[4] as BureauType,
-          assignedOfficial: 'Shri Anil Verma (PGRC)',
-          status: 'Received',
-          priority: 'High',
-          category: parts[5] as any,
-          description: parts[6] ? parts[6].replace(/"/g, '') : 'Allegation of unauthorized fee extraction.',
-          language: (parts[7] as any) || 'English',
-          complainantType: 'Student',
-          dateOfReceipt: parts[8] || new Date().toISOString().split('T')[0],
-          expectedDisposalDate: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0],
-          lastActionType: 'Notice Issued',
-          lastActionDate: new Date().toISOString().split('T')[0],
-          lastActionSummary: 'Imported via CSV batch adapter.',
-          nextActionRequired: 'Pending L1/L2 overlap review.',
-          supportingDocsCount: 3,
-          isOverdue: false
-        };
+    if (parseResult.accepted.length > 0) {
+      const newComplaints = [...parseResult.accepted];
+      const newAlerts: OverlapAlert[] = [];
 
-        const alert = evaluate3LevelOverlap(newComp, complaints);
+      newComplaints.forEach(c => {
+        const alert = evaluate3LevelOverlap(c, [...complaints, ...newComplaints]);
         if (alert) {
-          alert.newComplaintId = newComp.id;
-          newComp.overlapAlertId = alert.id;
-          setAlerts(prev => [alert, ...prev]);
-          setActiveAlertForCoordination(alert);
+          alert.newComplaintId = c.id;
+          c.overlapAlertId = alert.id;
+          newAlerts.push(alert);
         }
+      });
 
-        setComplaints(prev => [newComp, ...prev]);
-        imported++;
+      setComplaints(prev => [...newComplaints, ...prev]);
+      if (newAlerts.length > 0) {
+        setAlerts(prev => [...newAlerts, ...prev]);
+        setActiveAlertForCoordination(newAlerts[0]);
       }
+
+      // Update institution totals
+      setInstitutions(prev => prev.map(inst => {
+        const addedForInst = newComplaints.filter(c => c.institutionId === inst.id).length;
+        const alertsForInst = newAlerts.filter(a => a.institutionId === inst.id).length;
+        if (addedForInst > 0) {
+          return {
+            ...inst,
+            totalComplaints: inst.totalComplaints + 1,
+            pendingComplaints: inst.pendingComplaints + 1,
+            activeOverlaps: inst.activeOverlaps + alertsForInst
+          };
+        }
+        return inst;
+      }));
+
+      addAuditLog(
+        'CSV File Ingestion Completed',
+        'Security',
+        `CSV-BATCH-${Date.now().toString().slice(-4)}`,
+        `Ingested ${parseResult.accepted.length} complaints. Rejected ${parseResult.rejected.length} invalid rows.`
+      );
     }
 
-    addAuditLog(
-      'Batch CSV Ingestion Executed',
-      'Security',
-      'CSV-IMPORT-BATCH',
-      `Imported ${imported} synthetic case records without re-entry into AICTE Samanvay layer.`
-    );
-
-    return imported;
+    return parseResult;
   };
 
+  // 1-Click Synthetic Sample Ingestion
+  const importSyntheticCSV = (): number => {
+    const result = importUploadedCsv(SYNTHETIC_CSV_DATA);
+    return result.accepted.length;
+  };
+
+  const getSampleCsvText = () => generateSampleCsv();
+
+  // Reset to clean baseline
   const resetToSihBaseline = () => {
+    try {
+      localStorage.removeItem(`${STORAGE_KEY}_institutions`);
+      localStorage.removeItem(`${STORAGE_KEY}_complaints`);
+      localStorage.removeItem(`${STORAGE_KEY}_alerts`);
+      localStorage.removeItem(`${STORAGE_KEY}_groups`);
+      localStorage.removeItem(`${STORAGE_KEY}_actions`);
+      localStorage.removeItem(`${STORAGE_KEY}_audit`);
+    } catch (e) {
+      // ignore
+    }
+
     setInstitutions(MOCK_INSTITUTIONS);
     setComplaints(INITIAL_COMPLAINTS);
     setAlerts(INITIAL_ALERTS);
@@ -477,6 +528,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateComplaintStatus,
       evaluatePreActionCheck,
       importSyntheticCSV,
+      importUploadedCsv,
+      getSampleCsvText,
       addSharedDocumentToGroup,
       resetToSihBaseline,
       loadSihPresetComplaint

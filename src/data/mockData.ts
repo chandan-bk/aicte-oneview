@@ -1,4 +1,5 @@
 import { Institution, Complaint, OverlapAlert, CoordinationGroup, CaseAction, AuditLogEntry, UserProfile, SharedDocumentRegistryItem } from '../types';
+import { computeAuditHash } from '../services/crypto';
 
 export const MOCK_USERS: UserProfile[] = [
   {
@@ -402,30 +403,48 @@ export const INITIAL_ACTIONS: CaseAction[] = [
   }
 ];
 
+const genesisHash = 'GENESIS-BLOCK-AICTE-SAMANVAY';
+
+const log1Timestamp = '2026-10-26T14:15:22Z';
+const log1Actor = 'AICTE Samanvay Overlap Engine';
+const log1Action = 'Level 1 & 2 Overlap Alert';
+const log1Entity = 'ALT-2026-088';
+const log1Details = 'Triggered 3-level overlap alert between C-205 (PGRC) and existing C-101 (RB) on ABC Engineering College.';
+const log1Hash = computeAuditHash(log1Timestamp, log1Actor, log1Action, log1Entity, log1Details, genesisHash);
+
+const log2Timestamp = '2026-10-26T18:30:12Z';
+const log2Actor = 'Dr. Rajiv Kumar';
+const log2Action = 'Executive Cross-Bureau Sync';
+const log2Entity = 'SYS-SYNC-Q3';
+const log2Details = 'Cross-Bureau coordination layer synchronized records across RB, PGRC, and AB.';
+const log2Hash = computeAuditHash(log2Timestamp, log2Actor, log2Action, log2Entity, log2Details, log1Hash);
+
 export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
   {
     id: 'AUD-9011',
-    timestamp: '2026-10-26T18:30:12Z',
-    actor: 'Dr. Rajiv Kumar',
+    timestamp: log2Timestamp,
+    actor: log2Actor,
     actorRole: 'AICTE Senior Management (Member Secretary)',
     actorBureau: 'AICTE HQ Executive',
-    action: 'Executive Cross-Bureau Sync',
+    action: log2Action,
     entityType: 'Security',
-    entityId: 'SYS-SYNC-Q3',
-    details: 'Cross-Bureau coordination layer synchronized records across RB, PGRC, and AB.',
-    hash: 'SHA256:7f3b89a01e4281f9b30d12e4'
+    entityId: log2Entity,
+    details: log2Details,
+    hash: log2Hash,
+    previousHash: log1Hash
   },
   {
     id: 'AUD-9010',
-    timestamp: '2026-10-26T14:15:22Z',
-    actor: 'AICTE Samanvay Overlap Engine',
+    timestamp: log1Timestamp,
+    actor: log1Actor,
     actorRole: 'System Daemon',
     actorBureau: 'AICTE HQ Executive',
-    action: 'Level 1 & 2 Overlap Alert',
+    action: log1Action,
     entityType: 'OverlapAlert',
-    entityId: 'ALT-2026-088',
-    details: 'Triggered 3-level overlap alert between C-205 (PGRC) and existing C-101 (RB) on ABC Engineering College.',
-    hash: 'SHA256:5c829e1f409bc2456aa109d7'
+    entityId: log1Entity,
+    details: log1Details,
+    hash: log1Hash,
+    previousHash: genesisHash
   }
 ];
 

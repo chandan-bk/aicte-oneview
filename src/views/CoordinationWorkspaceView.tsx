@@ -315,21 +315,27 @@ export const CoordinationWorkspaceView: React.FC = () => {
               </span>
             </div>
 
-            {isCommitted ? (
+            {isCommitted || alert?.status === 'Reviewed & Coordinated' ? (
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-emerald-900 space-y-2 animate-in zoom-in-95">
                 <div className="flex items-center gap-2 font-bold text-sm">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                  <span>Coordination Order Successfully Executed & Linked under CG-008</span>
+                  <span>Coordination Order Executed & Linked under CG-008</span>
                 </div>
                 <p className="text-xs leading-relaxed text-emerald-800">
-                  Both cases ({case1?.id} & {case2?.id}) are linked under Coordination Group <strong>CG-008</strong>. The Regulation Bureau will lead statutory proceedings with PGRC evidentiary support. Both Bureaus retain full docket authority.
+                  Cases ({case1?.id} & {case2?.id}) are linked under Coordination Group <strong>CG-008</strong>. The Regulation Bureau will lead statutory proceedings with PGRC evidentiary support. Both Bureaus retain full docket authority.
                 </p>
                 <div className="pt-2 flex items-center gap-3">
                   <button
                     onClick={() => setCurrentView('audit')}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition shadow"
                   >
-                    View Tamper-Evident Audit Record
+                    View Cryptographic Audit Log
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('sharedDocs')}
+                    className="px-4 py-2 bg-purple-700 hover:bg-purple-600 text-white rounded-lg text-xs font-bold transition shadow"
+                  >
+                    Open Shared Document Registry
                   </button>
                   <button
                     onClick={() => setCurrentView('dashboard')}
@@ -505,6 +511,10 @@ export const CoordinationWorkspaceView: React.FC = () => {
                 >
                   Proceed with Independent Notice (Override with Reason)
                 </button>
+              </div>
+
+              <div className="p-3 bg-white/70 border border-slate-200 rounded-xl text-[11px] text-slate-600 leading-relaxed mt-2">
+                <strong>Advisory Disclaimer:</strong> The Pre-Action Check highlights known recorded prior actions across Bureaus. The absence of an advisory does not guarantee an action is safe or free of conflict. Officials retain full statutory responsibility.
               </div>
             </div>
           ) : (

@@ -191,6 +191,7 @@ export interface AuditLogEntry {
   entityId: string;
   details: string;
   hash: string;
+  previousHash?: string;
 }
 
 export interface UserProfile {
