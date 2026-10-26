@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   Sparkles, ChevronRight, ChevronLeft, CheckCircle2, 
-  Play, RotateCcw, X, ExternalLink, ShieldAlert, ArrowRight, ShieldCheck, Layers 
+  Play, RotateCcw, X, Layers, GripHorizontal, 
+  Minus, Maximize2, ArrowUpRight, Move
 } from 'lucide-react';
 
 export const DemoGuideModal: React.FC = () => {
@@ -10,9 +11,102 @@ export const DemoGuideModal: React.FC = () => {
     sihDemoStep, setSihDemoStep, 
     isDemoGuideOpen, setIsDemoGuideOpen, 
     setCurrentView, resetToSihBaseline,
-    loadSihPresetComplaint, setSelectedInstitution,
-    institutions, complaints, alerts
+    setSelectedInstitution, institutions
   } = useApp();
+
+  // Position state (custom pixel coordinates or default bottom-right)
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isMinimized, setIsMinimized] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Initialize position to bottom right on mount
+  useEffect(() => {
+    if (!position) {
+      const defaultX = Math.max(20, window.innerWidth - 530);
+      const defaultY = Math.max(20, window.innerHeight - 320);
+      setPosition({ x: defaultX, y: defaultY });
+    }
+  }, []);
+
+  // Handle window resize so modal stays on screen
+  useEffect(() => {
+    const handleResize = () => {
+      setPosition(prev => {
+        if (!prev) return null;
+        const maxX = window.innerWidth - (modalRef.current?.offsetWidth || 500) - 20;
+        const maxY = window.innerHeight - (modalRef.current?.offsetHeight || 250) - 20;
+        return {
+          x: Math.max(10, Math.min(maxX, prev.x)),
+          y: Math.max(10, Math.min(maxY, prev.y))
+        };
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Dragging logic
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only drag from header handle
+    if ((e.target as HTMLElement).closest('button, select, input')) return;
+    
+    setIsDragging(true);
+    const rect = modalRef.current?.getBoundingClientRect();
+    if (rect) {
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    }
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const modalWidth = modalRef.current?.offsetWidth || 500;
+      const modalHeight = modalRef.current?.offsetHeight || 250;
+
+      const newX = Math.max(10, Math.min(window.innerWidth - modalWidth - 10, e.clientX - dragOffset.x));
+      const newY = Math.max(10, Math.min(window.innerHeight - modalHeight - 10, e.clientY - dragOffset.y));
+
+      setPosition({ x: newX, y: newY });
+    };
+
+    const handleMouseUp = () => {
+      if (isDragging) setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
+
+  // Corner snap helper
+  const snapTo = (corner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right') => {
+    const modalWidth = modalRef.current?.offsetWidth || 500;
+    const modalHeight = modalRef.current?.offsetHeight || 250;
+    switch (corner) {
+      case 'top-left':
+        setPosition({ x: 20, y: 70 });
+        break;
+      case 'top-right':
+        setPosition({ x: window.innerWidth - modalWidth - 20, y: 70 });
+        break;
+      case 'bottom-left':
+        setPosition({ x: 20, y: window.innerHeight - modalHeight - 20 });
+        break;
+      case 'bottom-right':
+        setPosition({ x: window.innerWidth - modalWidth - 20, y: window.innerHeight - modalHeight - 20 });
+        break;
+    }
+  };
 
   if (!isDemoGuideOpen) {
     return (
@@ -84,99 +178,189 @@ export const DemoGuideModal: React.FC = () => {
   const currentStepData = steps[sihDemoStep - 1] || steps[0];
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 w-full max-w-lg bg-slate-900/95 backdrop-blur-md text-white rounded-xl shadow-2xl border border-amber-500/50 p-4 transition-all animate-in slide-in-from-bottom-5">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-700/80 pb-2.5 mb-3">
+    <div
+      ref={modalRef}
+      style={{
+        left: position ? `${position.x}px` : undefined,
+        top: position ? `${position.y}px` : undefined,
+        position: 'fixed'
+      }}
+      className={`z-50 w-full ${isMinimized ? 'max-w-sm' : 'max-w-lg'} bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border ${
+        isDragging ? 'border-amber-400 ring-2 ring-amber-400/40 cursor-grabbing' : 'border-amber-500/50'
+      } transition-shadow select-none`}
+    >
+      {/* Draggable Header Bar */}
+      <div
+        onMouseDown={handleMouseDown}
+        className="px-3.5 py-2.5 border-b border-slate-700/80 flex items-center justify-between cursor-grab active:cursor-grabbing bg-slate-950/60 rounded-t-2xl"
+        title="Click and drag anywhere on this header to move"
+      >
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
-            <Layers className="w-4 h-4" />
+          <div className="p-1 text-slate-400 hover:text-amber-400">
+            <GripHorizontal className="w-4 h-4" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
-                AICTE Samanvay — 3-Minute Demo Guide
-              </span>
-              <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full border border-slate-700">
-                Step {sihDemoStep} of 6
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-400">{currentStepData.subtitle}</div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>SIH Demo Guide</span>
+            </span>
+            <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.2 rounded-full border border-slate-700 font-mono">
+              Step {sihDemoStep}/6
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        {/* Right Corner Buttons */}
+        <div className="flex items-center gap-1">
+          {/* Quick Corner Snap Menu */}
+          <div className="hidden sm:flex items-center gap-0.5 mr-1 text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
+            <span className="text-[9px] mr-0.5 text-slate-500">Snap:</span>
+            <button
+              onClick={() => snapTo('top-left')}
+              title="Snap Top-Left"
+              className="hover:text-amber-300 px-0.5"
+            >
+              ↖
+            </button>
+            <button
+              onClick={() => snapTo('top-right')}
+              title="Snap Top-Right"
+              className="hover:text-amber-300 px-0.5"
+            >
+              ↗
+            </button>
+            <button
+              onClick={() => snapTo('bottom-left')}
+              title="Snap Bottom-Left"
+              className="hover:text-amber-300 px-0.5"
+            >
+              ↙
+            </button>
+            <button
+              onClick={() => snapTo('bottom-right')}
+              title="Snap Bottom-Right"
+              className="hover:text-amber-300 px-0.5"
+            >
+              ↘
+            </button>
+          </div>
+
           <button
             onClick={resetToSihBaseline}
             title="Reset to baseline"
-            className="p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition"
+            className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
+
+          <button
+            onClick={() => setIsMinimized(!isMinimized)}
+            title={isMinimized ? 'Expand full guide' : 'Minimize bar'}
+            className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition"
+          >
+            {isMinimized ? <Maximize2 className="w-3.5 h-3.5" /> : <Minus className="w-3.5 h-3.5" />}
+          </button>
+
           <button
             onClick={() => setIsDemoGuideOpen(false)}
-            className="p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition"
+            title="Close demo guide"
+            className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      {/* Step Description */}
-      <div className="mb-3.5">
-        <h4 className="text-sm font-semibold text-slate-100 mb-1">
-          {currentStepData.title}
-        </h4>
-        <p className="text-xs text-slate-300 leading-relaxed">
-          {currentStepData.desc}
-        </p>
-      </div>
+      {/* Collapsed Compact View */}
+      {isMinimized ? (
+        <div className="p-3 flex items-center justify-between gap-3 text-xs">
+          <div className="truncate flex-1">
+            <span className="font-semibold text-slate-200 block truncate">
+              {currentStepData.title}
+            </span>
+          </div>
 
-      {/* Progress Bars */}
-      <div className="grid grid-cols-6 gap-1.5 mb-3">
-        {steps.map((s, idx) => (
-          <div
-            key={s.step}
-            onClick={() => setSihDemoStep(idx + 1)}
-            className={`h-1.5 rounded-full cursor-pointer transition-all ${
-              idx + 1 === sihDemoStep
-                ? 'bg-amber-400'
-                : idx + 1 < sihDemoStep
-                ? 'bg-emerald-500'
-                : 'bg-slate-700'
-            }`}
-            title={`Step ${idx + 1}: ${s.title}`}
-          />
-        ))}
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between gap-2 pt-1">
-        <button
-          onClick={currentStepData.onAction}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 transition shadow-sm"
-        >
-          <Play className="w-3.5 h-3.5 fill-current" />
-          <span>{currentStepData.actionLabel}</span>
-        </button>
-
-        <div className="flex items-center gap-1.5">
-          <button
-            disabled={sihDemoStep === 1}
-            onClick={() => setSihDemoStep(Math.max(1, sihDemoStep - 1))}
-            className="p-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-40 transition"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            disabled={sihDemoStep === 6}
-            onClick={() => setSihDemoStep(Math.min(6, sihDemoStep + 1))}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-40 text-xs font-medium transition"
-          >
-            <span>Next Step</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={currentStepData.onAction}
+              className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition"
+            >
+              Run
+            </button>
+            <button
+              disabled={sihDemoStep === 6}
+              onClick={() => setSihDemoStep(Math.min(6, sihDemoStep + 1))}
+              className="p-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded disabled:opacity-30"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        /* Full Expanded Body */
+        <div className="p-4 space-y-3">
+          <div>
+            <div className="text-[11px] text-amber-400/90 font-medium mb-0.5">
+              {currentStepData.subtitle}
+            </div>
+            <h4 className="text-sm font-bold text-slate-100 mb-1">
+              {currentStepData.title}
+            </h4>
+            <p className="text-xs text-slate-300 leading-relaxed font-sans">
+              {currentStepData.desc}
+            </p>
+          </div>
+
+          {/* Progress Indicators */}
+          <div className="grid grid-cols-6 gap-1.5 py-1">
+            {steps.map((s, idx) => (
+              <div
+                key={s.step}
+                onClick={() => setSihDemoStep(idx + 1)}
+                className={`h-1.5 rounded-full cursor-pointer transition-all ${
+                  idx + 1 === sihDemoStep
+                    ? 'bg-amber-400 ring-2 ring-amber-400/30'
+                    : idx + 1 < sihDemoStep
+                    ? 'bg-emerald-500'
+                    : 'bg-slate-700 hover:bg-slate-600'
+                }`}
+                title={`Step ${idx + 1}: ${s.title}`}
+              />
+            ))}
+          </div>
+
+          {/* Bottom Actions */}
+          <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-800/80">
+            <button
+              onClick={currentStepData.onAction}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 transition shadow"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>{currentStepData.actionLabel}</span>
+            </button>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                disabled={sihDemoStep === 1}
+                onClick={() => setSihDemoStep(Math.max(1, sihDemoStep - 1))}
+                className="p-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-40 transition"
+                title="Previous Step"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                disabled={sihDemoStep === 6}
+                onClick={() => setSihDemoStep(Math.min(6, sihDemoStep + 1))}
+                className="flex items-center gap-1 px-3 py-1.5 rounded bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-40 text-xs font-semibold transition"
+                title="Next Step"
+              >
+                <span>Next</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
