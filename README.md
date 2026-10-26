@@ -1,11 +1,15 @@
 # AICTE Samanvay: Institution Case Intelligence and Coordination Layer
 
+[![Live Demo on GitHub Pages](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-2ea44f?style=for-the-badge&logo=github)](https://chandan-bk.github.io/aicte-oneview/)
+
 [![Smart India Hackathon 2026](https://img.shields.io/badge/SIH-2026-orange.svg)](https://sih.gov.in)
 [![Problem Statement](https://img.shields.io/badge/Problem%20ID-SIH26264-blue.svg)]()
 [![Theme](https://img.shields.io/badge/Theme-Smart%20Automation-purple.svg)]()
 [![Status](https://img.shields.io/badge/Prototype-Ready-emerald.svg)]()
 
 > **Tagline:** *One Institution. Connected Cases. Coordinated Action.*
+
+👉 **Live Demo URL:** [https://chandan-bk.github.io/aicte-oneview/](https://chandan-bk.github.io/aicte-oneview/)
 
 AICTE Samanvay is an **overlay on existing systems** (Regulation Bureau, PGRC, Approval Bureau), **not a replacement portal**. It connects related cases, resolves them to one verified institution profile, detects overlaps across three distinct levels, and warns officers through a **Pre-Action Check** before they duplicate or contradict another Bureau's action.
 
