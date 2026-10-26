@@ -1,13 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { 
   Institution, Complaint, OverlapAlert, CoordinationGroup, 
-  CaseAction, AuditLogEntry, UserProfile, CoordinationDecision, BureauType, ComplaintStatus 
+  CaseAction, AuditLogEntry, UserProfile, CoordinationDecision, BureauType, ComplaintStatus,
+  ActionVocabulary, PreActionCheckAdvisory, SharedDocumentRegistryItem 
 } from '../types';
 import { 
   MOCK_USERS, MOCK_INSTITUTIONS, INITIAL_COMPLAINTS, 
-  INITIAL_ALERTS, INITIAL_COORDINATION_GROUPS, INITIAL_ACTIONS, INITIAL_AUDIT_LOGS 
+  INITIAL_ALERTS, INITIAL_COORDINATION_GROUPS, INITIAL_ACTIONS, INITIAL_AUDIT_LOGS, SYNTHETIC_CSV_DATA 
 } from '../data/mockData';
-import { evaluateComplaintOverlap } from '../services/overlapEngine';
+import { evaluate3LevelOverlap, checkPreActionAdvisory } from '../services/overlapEngine';
 import confetti from 'canvas-confetti';
 
 interface AppContextType {
@@ -22,6 +23,7 @@ interface AppContextType {
   selectedComplaint: Complaint | null;
   selectedInstitution: Institution | null;
   activeAlertForCoordination: OverlapAlert | null;
+  activePreActionAdvisory: PreActionCheckAdvisory | null;
   sihDemoStep: number;
   isDemoGuideOpen: boolean;
   setCurrentView: (view: string) => void;
@@ -29,6 +31,7 @@ interface AppContextType {
   setSelectedComplaint: (complaint: Complaint | null) => void;
   setSelectedInstitution: (institution: Institution | null) => void;
   setActiveAlertForCoordination: (alert: OverlapAlert | null) => void;
+  setActivePreActionAdvisory: (advisory: PreActionCheckAdvisory | null) => void;
   setSihDemoStep: (step: number) => void;
   setIsDemoGuideOpen: (open: boolean) => void;
   registerComplaint: (newComplaint: Partial<Complaint>) => { complaint: Complaint; alert: OverlapAlert | null };
@@ -39,7 +42,10 @@ interface AppContextType {
     directives: string[],
     leadBureau: BureauType
   ) => void;
-  updateComplaintStatus: (complaintId: string, status: ComplaintStatus, remarks: string) => void;
+  updateComplaintStatus: (complaintId: string, status: ComplaintStatus, remarks: string, actionType?: ActionVocabulary) => void;
+  evaluatePreActionCheck: (action: ActionVocabulary, complaint: Complaint) => PreActionCheckAdvisory | null;
+  importSyntheticCSV: () => number;
+  addSharedDocumentToGroup: (groupId: string, docTitle: string) => void;
   resetToSihBaseline: () => void;
   loadSihPresetComplaint: () => Partial<Complaint>;
 }
@@ -54,12 +60,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [caseActions, setCaseActions] = useState<CaseAction[]>(INITIAL_ACTIONS);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(INITIAL_AUDIT_LOGS);
   
-  const [currentUser, setCurrentUser] = useState<UserProfile>(MOCK_USERS[0]); // Default to AICTE Member Secretary
+  const [currentUser, setCurrentUser] = useState<UserProfile>(MOCK_USERS[0]);
   const [currentView, setCurrentView] = useState<string>('dashboard');
   
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [selectedInstitution, setSelectedInstitution] = useState<Institution | null>(null);
   const [activeAlertForCoordination, setActiveAlertForCoordination] = useState<OverlapAlert | null>(INITIAL_ALERTS[0]);
+  const [activePreActionAdvisory, setActivePreActionAdvisory] = useState<PreActionCheckAdvisory | null>(null);
   
   const [sihDemoStep, setSihDemoStep] = useState<number>(1);
   const [isDemoGuideOpen, setIsDemoGuideOpen] = useState<boolean>(true);
@@ -86,7 +93,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAuditLogs(prev => [newLog, ...prev]);
   };
 
-  // Register a new complaint with real-time overlap analysis
+  // Register a new complaint with 3-Level Overlap analysis
   const registerComplaint = (complaintData: Partial<Complaint>) => {
     const institution = institutions.find(i => i.id === complaintData.institutionId) || institutions[0];
     const generatedId = `C-${Math.floor(200 + Math.random() * 90)}`;
@@ -104,18 +111,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       priority: complaintData.priority || 'High',
       category: complaintData.category || 'Unauthorized Fees / Capitation',
       description: complaintData.description || '',
+      language: complaintData.language || 'English',
       complainantType: complaintData.complainantType || 'Student',
       dateOfReceipt: new Date().toISOString().split('T')[0],
       expectedDisposalDate: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0],
+      lastActionType: 'Notice Issued',
       lastActionDate: new Date().toISOString().split('T')[0],
-      lastActionSummary: 'Complaint registered and ingested into AICTE OneView central registry.',
+      lastActionSummary: 'Complaint imported into AICTE Samanvay coordination overlay.',
       nextActionRequired: 'Pending inter-bureau overlap scrutiny and desk assignment.',
       supportingDocsCount: complaintData.supportingDocsCount || 2,
       isOverdue: false
     };
 
-    // Run overlap detection against all existing complaints
-    const detectedAlert = evaluateComplaintOverlap(fullComplaint, complaints, institution);
+    // Run 3-Level Overlap Detection
+    const detectedAlert = evaluate3LevelOverlap(fullComplaint, complaints, institution);
 
     if (detectedAlert) {
       detectedAlert.newComplaintId = generatedId;
@@ -123,18 +132,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setAlerts(prev => [detectedAlert, ...prev]);
       setActiveAlertForCoordination(detectedAlert);
 
-      // Audit log for overlap alert
       addAuditLog(
-        'Overlap Alert Triggered',
+        '3-Level Overlap Alert Triggered',
         'OverlapAlert',
         detectedAlert.id,
-        `Intelligent overlap detection identified ${detectedAlert.overallScore}% score between new ${generatedId} and existing ${detectedAlert.matchedComplaintId}`
+        `L1 Co-Activity detected on ${institution.name}. L2 similarity: ${detectedAlert.overallScore}%. L3 Warning: ${detectedAlert.level3ActionConflict?.conflictType || 'None'}`
       );
     }
 
     setComplaints(prev => [fullComplaint, ...prev]);
 
-    // Update institution pending & overlap counts
     setInstitutions(prev => prev.map(inst => {
       if (inst.id === institution.id) {
         return {
@@ -147,27 +154,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return inst;
     }));
 
-    // Action record
     const newAction: CaseAction = {
       id: `ACT-${Date.now().toString().slice(-4)}`,
       complaintId: generatedId,
       timestamp: new Date().toISOString(),
       actor: currentUser.name,
       actorBureau: currentUser.bureau,
-      actionType: 'Status Change',
-      details: `Complaint registered in ${fullComplaint.receivingBureau}. Overlap alert generated: ${detectedAlert ? detectedAlert.id : 'None'}.`
+      actionType: 'Notice Issued',
+      details: `Case ingested under ${fullComplaint.receivingBureau}. Overlap alert: ${detectedAlert ? detectedAlert.id : 'None'}.`
     };
     setCaseActions(prev => [newAction, ...prev]);
 
-    // Audit record
     addAuditLog(
-      'Complaint Registered',
+      'Complaint Ingested via Overlay',
       'Complaint',
       generatedId,
-      `Registered complaint for ${institution.name} (${institution.aictePermanentId}) under ${fullComplaint.receivingBureau}`
+      `Ingested complaint for ${institution.name} (${institution.aictePermanentId}) under ${fullComplaint.receivingBureau}`
     );
 
     return { complaint: fullComplaint, alert: detectedAlert };
+  };
+
+  // Headline Innovation: Pre-Action Check Evaluator
+  const evaluatePreActionCheck = (action: ActionVocabulary, complaint: Complaint): PreActionCheckAdvisory | null => {
+    const advisory = checkPreActionAdvisory(action, complaint, complaints);
+    setActivePreActionAdvisory(advisory);
+    if (advisory) {
+      addAuditLog(
+        'Pre-Action Advisory Intercept',
+        'PreActionCheck',
+        complaint.id,
+        `Officer intended '${action}'. System warned of prior action by ${advisory.conflictingBureau}: ${advisory.message}`
+      );
+    }
+    return advisory;
   };
 
   // Record a formal Coordination Decision
@@ -194,6 +214,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       jointDirectives: directives,
       leadBureau,
       participatingBureaus: ['Regulation Bureau (RB)', 'Public Grievance Redressal Cell (PGRC)'],
+      sharedDocuments: [
+        {
+          id: `DOC-${Date.now().toString().slice(-3)}`,
+          documentTitle: 'Student Fee Payment Receipts & Affidavits (PGRC Docket)',
+          requestedByBureau: 'Public Grievance Redressal Cell (PGRC)',
+          requestDate: '2026-10-26',
+          status: 'Received & Verified'
+        },
+        {
+          id: `DOC-${Date.now().toString().slice(-3)}-B`,
+          documentTitle: '3-Year Audited Balance Sheet & Fee Ledger (RB Docket)',
+          requestedByBureau: 'Regulation Bureau (RB)',
+          requestDate: '2026-10-18',
+          status: 'Pending Institution'
+        }
+      ],
       createdBy: `${currentUser.name} (${currentUser.role})`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -202,7 +238,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setCoordinationGroups(prev => [newGroup, ...prev]);
 
-    // Update Alert status
     setAlerts(prev => prev.map(a => {
       if (a.id === alertId) {
         return {
@@ -216,7 +251,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return a;
     }));
 
-    // Update both Complaints to reference coordination group
     setComplaints(prev => prev.map(c => {
       if (c.id === alert.matchedComplaintId || c.id === alert.newComplaintId) {
         return {
@@ -230,7 +264,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return c;
     }));
 
-    // Decrement active overlaps for institution
     setInstitutions(prev => prev.map(inst => {
       if (inst.id === alert.institutionId) {
         return {
@@ -241,15 +274,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return inst;
     }));
 
-    // Add Audit Log
     addAuditLog(
       'Coordination Decision Recorded',
       'CoordinationGroup',
       groupNum,
-      `Official decision '${decision}' executed by ${currentUser.name}. Cases ${alert.matchedComplaintId} & ${alert.newComplaintId} linked under ${groupNum} without loss of Bureau jurisdiction.`
+      `Official decision '${decision}' executed by ${currentUser.name}. Cases ${alert.matchedComplaintId} & ${alert.newComplaintId} linked under ${groupNum} with shared document registry.`
     );
 
-    // Trigger celebration confetti for successful SIH demo milestone!
     try {
       confetti({
         particleCount: 80,
@@ -257,17 +288,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         origin: { y: 0.6 }
       });
     } catch (e) {
-      // ignore in test environments
+      // test environment catch
     }
   };
 
+  const addSharedDocumentToGroup = (groupId: string, docTitle: string) => {
+    const newDoc: SharedDocumentRegistryItem = {
+      id: `DOC-${Date.now().toString().slice(-4)}`,
+      documentTitle: docTitle,
+      requestedByBureau: currentUser.bureau as BureauType,
+      requestDate: new Date().toISOString().split('T')[0],
+      status: 'Requested'
+    };
+
+    setCoordinationGroups(prev => prev.map(g => {
+      if (g.id === groupId) {
+        return {
+          ...g,
+          sharedDocuments: [...g.sharedDocuments, newDoc]
+        };
+      }
+      return g;
+    }));
+
+    addAuditLog(
+      'Document Added to Shared Registry',
+      'CoordinationGroup',
+      groupId,
+      `Added '${docTitle}' to shared registry. The institution is asked once on behalf of both Bureaus.`
+    );
+  };
+
   // Update a complaint's status
-  const updateComplaintStatus = (complaintId: string, status: ComplaintStatus, remarks: string) => {
+  const updateComplaintStatus = (
+    complaintId: string, 
+    status: ComplaintStatus, 
+    remarks: string,
+    actionType: ActionVocabulary = 'Notice Issued'
+  ) => {
     setComplaints(prev => prev.map(c => {
       if (c.id === complaintId) {
         return {
           ...c,
           status,
+          lastActionType: actionType,
           lastActionDate: new Date().toISOString().split('T')[0],
           lastActionSummary: remarks
         };
@@ -281,20 +345,80 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       timestamp: new Date().toISOString(),
       actor: currentUser.name,
       actorBureau: currentUser.bureau,
-      actionType: 'Status Change',
+      actionType,
       details: `Status transitioned to ${status}. Remarks: ${remarks}`
     };
     setCaseActions(prev => [newAction, ...prev]);
 
     addAuditLog(
-      'Case Status Updated',
+      'Case Status Modified',
       'Complaint',
       complaintId,
-      `Status changed to ${status} by ${currentUser.name}`
+      `Action: ${actionType} -> Status: ${status} by ${currentUser.name}`
     );
   };
 
-  // Reset to clean SIH Baseline state
+  // CSV/Excel Ingestion (Prototype requirement)
+  const importSyntheticCSV = (): number => {
+    const lines = SYNTHETIC_CSV_DATA.trim().split('\n');
+    let imported = 0;
+    // Skip header line
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line) continue;
+      const parts = line.split(',');
+      if (parts.length >= 6) {
+        const id = parts[0];
+        // If already exists, skip
+        if (complaints.some(c => c.id === id)) continue;
+
+        const newComp: Complaint = {
+          id: parts[0],
+          referenceNumber: parts[1],
+          aictePermanentId: parts[2],
+          institutionId: 'INST-001',
+          institutionName: parts[3],
+          receivingBureau: parts[4] as BureauType,
+          assignedOfficial: 'Shri Anil Verma (PGRC)',
+          status: 'Received',
+          priority: 'High',
+          category: parts[5] as any,
+          description: parts[6] ? parts[6].replace(/"/g, '') : 'Allegation of unauthorized fee extraction.',
+          language: (parts[7] as any) || 'English',
+          complainantType: 'Student',
+          dateOfReceipt: parts[8] || new Date().toISOString().split('T')[0],
+          expectedDisposalDate: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0],
+          lastActionType: 'Notice Issued',
+          lastActionDate: new Date().toISOString().split('T')[0],
+          lastActionSummary: 'Imported via CSV batch adapter.',
+          nextActionRequired: 'Pending L1/L2 overlap review.',
+          supportingDocsCount: 3,
+          isOverdue: false
+        };
+
+        const alert = evaluate3LevelOverlap(newComp, complaints);
+        if (alert) {
+          alert.newComplaintId = newComp.id;
+          newComp.overlapAlertId = alert.id;
+          setAlerts(prev => [alert, ...prev]);
+          setActiveAlertForCoordination(alert);
+        }
+
+        setComplaints(prev => [newComp, ...prev]);
+        imported++;
+      }
+    }
+
+    addAuditLog(
+      'Batch CSV Ingestion Executed',
+      'Security',
+      'CSV-IMPORT-BATCH',
+      `Imported ${imported} synthetic case records without re-entry into AICTE Samanvay layer.`
+    );
+
+    return imported;
+  };
+
   const resetToSihBaseline = () => {
     setInstitutions(MOCK_INSTITUTIONS);
     setComplaints(INITIAL_COMPLAINTS);
@@ -305,9 +429,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSihDemoStep(1);
     setCurrentView('dashboard');
     setActiveAlertForCoordination(INITIAL_ALERTS[0]);
+    setActivePreActionAdvisory(null);
   };
 
-  // Load SIH Preset Complaint Data (as requested in Section 17)
   const loadSihPresetComplaint = (): Partial<Complaint> => {
     const abcInst = institutions.find(i => i.aictePermanentId === '1-43598711') || institutions[0];
     return {
@@ -318,6 +442,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       category: 'Unauthorized Fees / Capitation',
       priority: 'High',
       complainantType: 'Student',
+      language: 'English',
       description: 'Students of ABC Engineering College allege that the institution is collecting fees beyond the prescribed state committee structure, extorting unauthorized additional charges of Rs. 40,000 as compulsory lab maintenance and exam fees without giving official receipts.',
       supportingDocsCount: 4
     };
@@ -336,6 +461,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       selectedComplaint,
       selectedInstitution,
       activeAlertForCoordination,
+      activePreActionAdvisory,
       sihDemoStep,
       isDemoGuideOpen,
       setCurrentView,
@@ -343,11 +469,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setSelectedComplaint,
       setSelectedInstitution,
       setActiveAlertForCoordination,
+      setActivePreActionAdvisory,
       setSihDemoStep,
       setIsDemoGuideOpen,
       registerComplaint,
       recordCoordinationDecision,
       updateComplaintStatus,
+      evaluatePreActionCheck,
+      importSyntheticCSV,
+      addSharedDocumentToGroup,
       resetToSihBaseline,
       loadSihPresetComplaint
     }}>

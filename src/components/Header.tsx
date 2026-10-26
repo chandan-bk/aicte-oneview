@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { MOCK_USERS } from '../data/mockData';
 import { 
   Building2, ShieldAlert, GitMerge, FileText, BarChart3, 
-  History, PlusCircle, Presentation, UserCheck, Sparkles, CheckCircle2 
+  History, PlusCircle, Presentation, UserCheck, Sparkles, Layers, UploadCloud 
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -19,17 +19,17 @@ export const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 bg-[#0B2545] text-white shadow-lg border-b border-[#134074]">
       {/* Top Gov Branding Bar */}
-      <div className="bg-[#081B33] px-4 py-1 text-xs flex justify-between items-center text-slate-300 border-b border-slate-800">
+      <div className="bg-[#081B33] px-4 py-1.5 text-xs flex justify-between items-center text-slate-300 border-b border-slate-800">
         <div className="flex items-center gap-2">
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span className="font-semibold text-slate-200">Ministry of Education, Government of India</span>
+          <span className="font-semibold text-slate-200">Ministry of Education | AICTE</span>
           <span className="text-slate-500">|</span>
-          <span>All India Council for Technical Education (AICTE)</span>
+          <span className="text-amber-400 font-mono text-[11px]">SIH26264: Smart Automation</span>
         </div>
         <div className="flex items-center gap-4 text-[11px]">
-          <span className="text-amber-400 font-medium">Smart India Hackathon (SIH) Prototype Build</span>
-          <span className="text-slate-500">|</span>
-          <span>Single Source of Truth v2.4</span>
+          <span className="text-slate-300 italic hidden sm:inline">"One Institution. Connected Cases. Coordinated Action."</span>
+          <span className="text-slate-500 hidden sm:inline">|</span>
+          <span className="text-emerald-400 font-medium">Overlay Coordination Layer v3.0</span>
         </div>
       </div>
 
@@ -39,20 +39,20 @@ export const Header: React.FC = () => {
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentView('dashboard')}>
           <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 p-0.5 flex items-center justify-center shadow-md">
             <div className="w-full h-full bg-[#0B2545] rounded-[7px] flex items-center justify-center">
-              <span className="font-extrabold text-amber-400 text-lg tracking-wider font-['Outfit']">OV</span>
+              <span className="font-extrabold text-amber-400 text-lg tracking-wider font-['Outfit']">सम</span>
             </div>
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold font-['Outfit'] tracking-tight text-white flex items-center gap-1.5">
-                AICTE <span className="text-amber-400">OneView</span>
+                AICTE <span className="text-amber-400">Samanvay</span>
               </h1>
               <span className="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full">
-                Inter-Bureau Engine
+                Coordination Overlay
               </span>
             </div>
             <p className="text-xs text-slate-300 font-normal">
-              Intelligent Complaint Monitoring, Overlap Detection & Coordination
+              Institution Case Intelligence and Coordination Layer
             </p>
           </div>
         </div>
@@ -69,9 +69,9 @@ export const Header: React.FC = () => {
             }`}
           >
             <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>SIH Demo Guide</span>
+            <span>SIH Walkthrough</span>
             <span className="px-1.5 py-0.2 bg-slate-900/40 rounded text-[10px] font-bold">
-              Step {sihDemoStep}/7
+              Step {sihDemoStep}/6
             </span>
           </button>
 
@@ -130,7 +130,7 @@ export const Header: React.FC = () => {
             }`}
           >
             <Building2 className="w-4 h-4" />
-            <span>Institution Registry</span>
+            <span>Institution 360</span>
           </button>
 
           <button
@@ -142,7 +142,7 @@ export const Header: React.FC = () => {
             }`}
           >
             <PlusCircle className="w-4 h-4 text-emerald-400" />
-            <span>Register Complaint</span>
+            <span>Ingest & Overlap Check</span>
           </button>
 
           <button
@@ -186,7 +186,7 @@ export const Header: React.FC = () => {
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            <span>Analytics & Reports</span>
+            <span>SLA & Reports</span>
           </button>
 
           <button
@@ -203,7 +203,7 @@ export const Header: React.FC = () => {
 
           <div className="flex-1"></div>
 
-          {/* Presentation Slide Deck Tab */}
+          {/* 6-Slide Master PPT Deck */}
           <button
             onClick={() => setCurrentView('presentation')}
             className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-t-md transition-all whitespace-nowrap ${
@@ -213,7 +213,7 @@ export const Header: React.FC = () => {
             }`}
           >
             <Presentation className="w-4 h-4" />
-            <span>Pitch Slide Deck</span>
+            <span>6-Slide PPT Master</span>
           </button>
         </div>
       </nav>

@@ -50,10 +50,10 @@ export const AnalyticsView: React.FC = () => {
             <span className="text-xs text-slate-500 font-medium">Council Level Workload & TAT Tracking</span>
           </div>
           <h2 className="text-xl font-bold font-['Outfit'] text-slate-900">
-            AICTE Cross-Bureau Executive Intelligence
+            AICTE Cross-Bureau Case Analytics & SLA Tracking
           </h2>
           <p className="text-xs text-slate-500 max-w-2xl mt-0.5">
-            Transparent metrics calculated from underlying records. Eliminates double-counting of linked cases and isolates active overlap bottlenecks.
+            Transparent metrics calculated from underlying records. SLA thresholds (30-day default) are sample rules, configurable per category. Linked cases are never double-counted.
           </p>
         </div>
 

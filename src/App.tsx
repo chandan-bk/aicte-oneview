@@ -43,13 +43,13 @@ export const App: React.FC = () => {
       <footer className="bg-[#0B2545] text-slate-400 py-6 border-t border-slate-800 text-xs text-center mt-12">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="text-left">
-            <span className="font-bold text-white block">AICTE OneView National Platform</span>
+            <span className="font-bold text-white block">AICTE Samanvay: Institution Case Intelligence and Coordination Layer</span>
             <span>All India Council for Technical Education, Nelson Mandela Marg, Vasant Kunj, New Delhi - 110070</span>
           </div>
           <div className="flex items-center gap-4 text-[11px]">
-            <span>Smart India Hackathon 2026 Submission</span>
+            <span>SIH26264: Smart Automation</span>
             <span>•</span>
-            <span className="text-amber-400 font-semibold">Single Source of Truth Prototype</span>
+            <span className="text-amber-400 font-semibold">One Institution. Connected Cases. Coordinated Action.</span>
           </div>
         </div>
       </footer>

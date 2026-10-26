@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   Building2, AlertTriangle, GitMerge, Clock, CheckCircle2, 
-  ArrowUpRight, ShieldAlert, FileText, ChevronRight, Sparkles, Scale, Users
+  ArrowUpRight, ShieldAlert, FileText, ChevronRight, Sparkles, Scale, Users, UploadCloud, Layers
 } from 'lucide-react';
 
 export const DashboardView: React.FC = () => {
   const { 
     complaints, alerts, coordinationGroups, institutions, 
     setCurrentView, setSelectedComplaint, setSelectedInstitution,
-    setActiveAlertForCoordination, setSihDemoStep
+    setActiveAlertForCoordination, setSihDemoStep, importSyntheticCSV
   } = useApp();
+
+  const [importNotice, setImportNotice] = useState<string | null>(null);
 
   const pendingAlerts = alerts.filter(a => a.status === 'Pending Review');
   const activeComplaints = complaints.filter(c => c.status !== 'Disposed');
@@ -23,6 +25,12 @@ export const DashboardView: React.FC = () => {
   const abCount = complaints.filter(c => c.receivingBureau.includes('Approval')).length;
   const roCount = complaints.filter(c => c.receivingBureau.includes('Regional')).length;
 
+  const handleCsvImport = () => {
+    const count = importSyntheticCSV();
+    setImportNotice(`Successfully ingested ${count} synthetic complaint records into Samanvay overlay layer without data re-entry!`);
+    setTimeout(() => setImportNotice(null), 5000);
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Welcome / Context Hero */}
@@ -30,19 +38,26 @@ export const DashboardView: React.FC = () => {
         <div className="max-w-2xl">
           <div className="flex items-center gap-2 mb-2">
             <span className="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-bold text-xs uppercase tracking-wide border border-amber-400/30">
-              Cross-Bureau Oversight Engine
+              AICTE Samanvay
             </span>
-            <span className="text-xs text-slate-300">Live AICTE Institutional Grievance Stream</span>
+            <span className="text-xs text-slate-300 font-mono">SIH26264: Smart Automation</span>
           </div>
           <h2 className="text-2xl font-bold font-['Outfit'] tracking-tight text-white mb-2">
-            Centralized Institution Complaint & Overlap Coordination Platform
+            One Institution. Connected Cases. Coordinated Action.
           </h2>
           <p className="text-sm text-slate-300 leading-relaxed">
-            Eliminating operational silos across Regulation Bureau (RB), Public Grievance Redressal Cell (PGRC), and Approval Bureau (AB). Ensuring one consolidated institution history and AI-assisted cross-case overlap detection.
+            An overlay layer on existing Regulation Bureau (RB) and PGRC systems. Resolves cases to a single institution profile, detects overlaps across 3 levels (Co-activity, Issue, Action), and intercepts conflicting actions before they happen.
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={handleCsvImport}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg transition-all text-xs"
+          >
+            <UploadCloud className="w-4 h-4" />
+            <span>Import CSV / Synthetic Data</span>
+          </button>
           <button
             onClick={() => {
               setSihDemoStep(3);
@@ -51,19 +66,23 @@ export const DashboardView: React.FC = () => {
             className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl shadow-lg transition-all text-xs"
           >
             <Sparkles className="w-4 h-4" />
-            <span>Simulate Incoming Complaint</span>
-          </button>
-          <button
-            onClick={() => setCurrentView('coordination')}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl border border-white/20 transition-all text-xs"
-          >
-            <GitMerge className="w-4 h-4 text-amber-400" />
-            <span>Coordination Workspace</span>
+            <span>Simulate Incoming Case</span>
           </button>
         </div>
       </div>
 
-      {/* Overlap Alert Urgency Banner (If pending alerts exist) */}
+      {/* CSV Ingestion Banner */}
+      {importNotice && (
+        <div className="p-3.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl text-xs flex items-center justify-between shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-2 font-medium">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span>{importNotice}</span>
+          </div>
+          <span className="text-[10px] text-emerald-700 font-mono">NO RE-ENTRY REQUIRED</span>
+        </div>
+      )}
+
+      {/* Overlap Alert Banner with 3-Level Breakdown */}
       {pendingAlerts.length > 0 && (
         <div className="bg-gradient-to-r from-rose-950/80 via-rose-900/40 to-slate-900 rounded-xl p-4 border border-rose-500/40 shadow-lg flex flex-wrap items-center justify-between gap-4 animate-in fade-in">
           <div className="flex items-start gap-3 max-w-3xl">
@@ -71,16 +90,22 @@ export const DashboardView: React.FC = () => {
               <ShieldAlert className="w-6 h-6 animate-pulse" />
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span className="font-bold text-rose-300 text-sm">
-                  POTENTIAL OVERLAPPING CASES DETECTED — COORDINATION REQUIRED
+                  POTENTIAL OVERLAPPING CASES — COORDINATION REQUIRED
                 </span>
-                <span className="text-[11px] bg-rose-500 text-white font-bold px-2 py-0.2 rounded-full">
-                  Action Required
+                <span className="text-[10px] bg-rose-500 text-white font-bold px-2 py-0.2 rounded-full">
+                  L1 Co-Activity Detected
+                </span>
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold px-2 py-0.2 rounded-full">
+                  L2 Related Issue
+                </span>
+                <span className="text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold px-2 py-0.2 rounded-full">
+                  L3 Action Alert
                 </span>
               </div>
               <p className="text-xs text-slate-200 leading-relaxed">
-                Overlap detected on <strong className="text-white">{pendingAlerts[0].institutionName}</strong> (AICTE Permanent ID: {pendingAlerts[0].aictePermanentId}). New PGRC allegation matches active Regulation Bureau case <strong className="text-amber-300">{pendingAlerts[0].matchedComplaintId}</strong> with an <strong className="text-rose-300">{pendingAlerts[0].overallScore}% semantic & category match</strong>.
+                Active in both Regulation Bureau and PGRC for <strong className="text-white">{pendingAlerts[0].institutionName}</strong> (Permanent ID: {pendingAlerts[0].aictePermanentId}). Pre-Action check warns that Regulation Bureau has already requested 3-year fee ledgers.
               </p>
             </div>
           </div>
@@ -92,7 +117,7 @@ export const DashboardView: React.FC = () => {
             }}
             className="px-4 py-2 rounded-lg bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold transition shadow flex items-center gap-1.5 whitespace-nowrap"
           >
-            <span>Resolve Overlap Alert</span>
+            <span>Open Coordination Workspace</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
@@ -100,21 +125,19 @@ export const DashboardView: React.FC = () => {
 
       {/* KPI Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {/* Total Ingested */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium mb-1.5">
-            <span>Total Complaints</span>
+            <span>Total Ingested</span>
             <FileText className="w-4 h-4 text-slate-400" />
           </div>
           <div className="text-2xl font-bold font-['Outfit'] text-slate-800">
             {complaints.length}
           </div>
           <div className="text-[11px] text-emerald-600 font-medium mt-1">
-            Across 3 Major Bureaus
+            Across RB, PGRC & AB
           </div>
         </div>
 
-        {/* Active Under Process */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium mb-1.5">
             <span>Under Process</span>
@@ -128,35 +151,32 @@ export const DashboardView: React.FC = () => {
           </div>
         </div>
 
-        {/* Overdue / SLA Breached */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium mb-1.5">
-            <span>Overdue (&gt;30d)</span>
+            <span>Overdue (&gt;SLA)</span>
             <AlertTriangle className="w-4 h-4 text-rose-500" />
           </div>
           <div className="text-2xl font-bold font-['Outfit'] text-rose-600">
             {overdueComplaints.length}
           </div>
           <div className="text-[11px] text-rose-600 font-medium mt-1">
-            Escalation Triggered
+            Configurable Threshold
           </div>
         </div>
 
-        {/* Active Overlaps */}
         <div className="bg-white p-4 rounded-xl border border-amber-200 bg-amber-50/40 shadow-sm hover:shadow-md transition">
           <div className="flex items-center justify-between text-amber-700 text-xs font-medium mb-1.5">
-            <span>Unresolved Overlaps</span>
+            <span>Open Overlap Alerts</span>
             <GitMerge className="w-4 h-4 text-amber-600" />
           </div>
           <div className="text-2xl font-bold font-['Outfit'] text-amber-600">
             {pendingAlerts.length}
           </div>
           <div className="text-[11px] text-amber-700 font-semibold mt-1">
-            {pendingAlerts.length > 0 ? 'Requires Joint Action' : 'All Clear'}
+            {pendingAlerts.length > 0 ? 'Coordination Required' : 'All Coordinated'}
           </div>
         </div>
 
-        {/* Coordinated Groups */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium mb-1.5">
             <span>Coordination Groups</span>
@@ -166,98 +186,85 @@ export const DashboardView: React.FC = () => {
             {coordinationGroups.length}
           </div>
           <div className="text-[11px] text-slate-500 mt-1">
-            Linked Joint Portfolios
+            Linked (Never Merged)
           </div>
         </div>
 
-        {/* Avg Disposal Time */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium mb-1.5">
-            <span>Avg Disposal TAT</span>
+            <span>Disposed Cases</span>
             <Scale className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-2xl font-bold font-['Outfit'] text-emerald-600">
-            22.4 d
+            {disposedComplaints.length}
           </div>
           <div className="text-[11px] text-emerald-600 font-medium mt-1">
-            18% Faster Disposal
+            Full Audit Recorded
           </div>
         </div>
       </div>
 
-      {/* Middle Row: Bureau Workload & Institution Quick Watchlist */}
+      {/* Middle Row: 3-Level Overlap Architecture & Institution 360 Watchlist */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Bureau Workload Distribution */}
+        
+        {/* 3-Level Overlap Method Explainer */}
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
             <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
-              <Scale className="w-4 h-4 text-slate-600" />
-              <span>Inter-Bureau Caseload Allocation</span>
+              <Layers className="w-4 h-4 text-purple-600" />
+              <span>3-Level Overlap Engine</span>
             </h3>
-            <span className="text-xs text-slate-500">Live Count</span>
+            <span className="text-[10px] bg-purple-50 text-purple-700 font-bold px-2 py-0.5 rounded">Active</span>
           </div>
 
-          <div className="space-y-3.5">
-            <div>
-              <div className="flex justify-between text-xs font-medium mb-1">
-                <span className="text-slate-700">Regulation Bureau (RB)</span>
-                <span className="font-bold text-slate-900">{rbCount} cases</span>
+          <div className="space-y-2.5 text-xs">
+            <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="flex items-center justify-between font-bold text-slate-800 mb-0.5">
+                <span>Level 1: Co-Activity</span>
+                <span className="text-emerald-600 text-[10px]">Rules (Always-On)</span>
               </div>
-              <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-blue-600 rounded-full" style={{ width: `${(rbCount / complaints.length) * 100}%` }}></div>
-              </div>
+              <p className="text-[11px] text-slate-600 leading-snug">
+                Detects when multiple Bureaus are active on the same AICTE Permanent ID.
+              </p>
             </div>
 
-            <div>
-              <div className="flex justify-between text-xs font-medium mb-1">
-                <span className="text-slate-700">Public Grievance Redressal (PGRC)</span>
-                <span className="font-bold text-slate-900">{pgrcCount} cases</span>
+            <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="flex items-center justify-between font-bold text-slate-800 mb-0.5">
+                <span>Level 2: Related Issue</span>
+                <span className="text-blue-600 text-[10px]">Rules + Multilingual AI</span>
               </div>
-              <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-amber-500 rounded-full" style={{ width: `${(pgrcCount / complaints.length) * 100}%` }}></div>
-              </div>
+              <p className="text-[11px] text-slate-600 leading-snug">
+                Matches English, Hindi, and Hinglish allegations with category severity.
+              </p>
             </div>
 
-            <div>
-              <div className="flex justify-between text-xs font-medium mb-1">
-                <span className="text-slate-700">Approval Bureau (AB)</span>
-                <span className="font-bold text-slate-900">{abCount} cases</span>
+            <div className="p-2.5 bg-amber-50 rounded-lg border border-amber-200">
+              <div className="flex items-center justify-between font-bold text-amber-900 mb-0.5">
+                <span>Level 3: Action Conflict</span>
+                <span className="text-amber-700 text-[10px]">Action Vocabulary</span>
               </div>
-              <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(abCount / complaints.length) * 100}%` }}></div>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs font-medium mb-1">
-                <span className="text-slate-700">Regional Offices (RO)</span>
-                <span className="font-bold text-slate-900">{roCount} cases</span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-purple-500 rounded-full" style={{ width: `${Math.max(10, (roCount / complaints.length) * 100)}%` }}></div>
-              </div>
+              <p className="text-[11px] text-amber-800 leading-snug">
+                Warns if two Bureaus issue duplicate notices, repeat document requests, or contradict rulings.
+              </p>
             </div>
           </div>
 
-          <div className="mt-5 pt-4 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
-            <span>Silos connected via OneView central bus</span>
-            <span className="text-emerald-600 font-semibold flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Synchronized
-            </span>
+          <div className="mt-3 pt-2 text-[10px] text-slate-400 border-t border-slate-100 italic">
+            *Rules first, AI where rules cannot reach. Officials always decide.
           </div>
         </div>
 
-        {/* High Attention Institutions Dossier Preview */}
+        {/* High Attention Institution 360 Watchlist */}
         <div className="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-slate-600" />
-                  <span>Consolidated Institution Watchlist</span>
+                  <span>Institution 360 Watchlist</span>
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Institutions with active multi-bureau grievance histories
+                  Consolidated profiles indexed by AICTE Permanent ID
                 </p>
               </div>
               <button
@@ -267,7 +274,7 @@ export const DashboardView: React.FC = () => {
                 }}
                 className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
               >
-                <span>View Full Registry</span>
+                <span>View All Institutions</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -295,17 +302,17 @@ export const DashboardView: React.FC = () => {
                       inst.riskRating === 'Moderate' ? 'bg-amber-100 text-amber-700' :
                       'bg-emerald-100 text-emerald-700'
                     }`}>
-                      {inst.riskRating} Risk
+                      {inst.riskRating}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between text-[11px] text-slate-500">
-                    <span>ID: <strong className="text-slate-700">{inst.aictePermanentId}</strong></span>
+                    <span>Permanent ID: <strong className="text-slate-700">{inst.aictePermanentId}</strong></span>
                     <span>{inst.city}, {inst.state}</span>
                   </div>
 
                   <div className="mt-2 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
-                    <span className="text-slate-600">Total Cases: <strong className="text-slate-800">{inst.totalComplaints}</strong></span>
+                    <span className="text-slate-600">Total: <strong className="text-slate-800">{inst.totalComplaints}</strong></span>
                     {inst.activeOverlaps > 0 ? (
                       <span className="text-amber-700 font-bold flex items-center gap-1">
                         <GitMerge className="w-3 h-3" /> {inst.activeOverlaps} Overlap Alert
@@ -320,107 +327,9 @@ export const DashboardView: React.FC = () => {
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Permanent ID takes priority over name variants</span>
-            <span className="text-slate-400 font-mono text-[10px]">Registry Hash: 9942-VERIFIED</span>
+            <span>Overlay Architecture — No change to existing Bureau tools</span>
+            <span className="text-slate-400 font-mono text-[10px]">Registry Status: SYNCHRONIZED</span>
           </div>
-        </div>
-      </div>
-
-      {/* Recent Complaints Stream Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-sm text-slate-800">
-              Recent Case Feed & Cross-Bureau Audit Trail
-            </h3>
-            <p className="text-xs text-slate-500">
-              Live unified stream with automated duplicate detection
-            </p>
-          </div>
-          <button
-            onClick={() => setCurrentView('complaints')}
-            className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
-          >
-            <span>All Case Records</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-600 uppercase font-semibold text-[10px] tracking-wider border-b border-slate-200">
-              <tr>
-                <th className="py-3 px-4">Case ID & Ref</th>
-                <th className="py-3 px-4">Institution</th>
-                <th className="py-3 px-4">Bureau</th>
-                <th className="py-3 px-4">Category</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Coordination Status</th>
-                <th className="py-3 px-4 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {complaints.slice(0, 5).map(c => (
-                <tr key={c.id} className="hover:bg-slate-50/80 transition">
-                  <td className="py-3 px-4">
-                    <span className="font-bold text-slate-900 block">{c.id}</span>
-                    <span className="text-[10px] text-slate-400 font-mono">{c.referenceNumber}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="font-medium text-slate-800 block">{c.institutionName}</span>
-                    <span className="text-[10px] text-slate-500">AICTE ID: {c.aictePermanentId}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                      c.receivingBureau.includes('Regulation') ? 'bg-blue-100 text-blue-800' :
-                      c.receivingBureau.includes('PGRC') ? 'bg-amber-100 text-amber-800' :
-                      'bg-emerald-100 text-emerald-800'
-                    }`}>
-                      {c.receivingBureau.split(' ')[0]} {c.receivingBureau.includes('PGRC') ? 'PGRC' : 'Bureau'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-slate-700 max-w-[180px] truncate" title={c.category}>
-                    {c.category}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                      c.status === 'Disposed' ? 'bg-emerald-100 text-emerald-700' :
-                      c.status === 'Escalated' ? 'bg-rose-100 text-rose-700' :
-                      c.status === 'Under Process' ? 'bg-blue-100 text-blue-700' :
-                      'bg-slate-100 text-slate-700'
-                    }`}>
-                      {c.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    {c.coordinationGroupId ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-                        <GitMerge className="w-3 h-3" />
-                        <span>{c.coordinationGroupId} Linked</span>
-                      </span>
-                    ) : c.overlapAlertId ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 animate-pulse">
-                        <AlertTriangle className="w-3 h-3" />
-                        <span>Overlap Alert Pending</span>
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-400">Independent Case</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <button
-                      onClick={() => {
-                        setSelectedComplaint(c);
-                      }}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      Inspect
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

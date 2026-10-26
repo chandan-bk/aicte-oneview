@@ -46,6 +46,25 @@ export interface Institution {
   affiliatingUniversity: string;
 }
 
+export type ActionVocabulary = 
+  | 'Notice Issued' 
+  | 'Documents Requested' 
+  | 'Inspection Ordered' 
+  | 'Hearing Scheduled'
+  | 'Case Closed' 
+  | 'Transferred';
+
+export interface PreActionCheckAdvisory {
+  hasConflict: boolean;
+  severity: 'Info' | 'Warning' | 'High Risk';
+  targetAction: ActionVocabulary;
+  conflictingBureau: BureauType;
+  conflictingCaseId: string;
+  message: string;
+  priorActionDate: string;
+  recommendedAction: string;
+}
+
 export interface Complaint {
   id: string; // e.g. "C-101", "C-205"
   referenceNumber: string; // e.g. "AICTE/RB/2026/0842"
@@ -58,9 +77,11 @@ export interface Complaint {
   priority: ComplaintPriority;
   category: ComplaintCategory;
   description: string;
+  language?: 'English' | 'Hindi' | 'Hinglish';
   complainantType: 'Student' | 'Faculty' | 'Parent' | 'Whistleblower / Anonymous' | 'Public Body';
   dateOfReceipt: string;
   expectedDisposalDate: string;
+  lastActionType: ActionVocabulary;
   lastActionDate: string;
   lastActionSummary: string;
   nextActionRequired: string;
@@ -79,9 +100,9 @@ export interface OverlapBreakdown {
 }
 
 export type OverlapClassification = 
-  | 'Potential Duplicate' 
+  | 'Possible Duplicate' 
   | 'Related Complaints (Coordination Required)' 
-  | 'Unrelated Same Institution' 
+  | 'Same Institution but Unrelated' 
   | 'Uncertain Institution Match';
 
 export interface OverlapAlert {
@@ -92,6 +113,17 @@ export interface OverlapAlert {
   institutionName: string;
   aictePermanentId: string;
   overallScore: number; // 0-100
+  level1CoActivity: boolean; // Level 1: Are multiple Bureaus active on this institution?
+  level2RelatedIssue: {
+    isRelated: boolean;
+    reason: string;
+    score: number;
+  };
+  level3ActionConflict?: {
+    hasConflict: boolean;
+    conflictType: string;
+    details: string;
+  };
   breakdown: OverlapBreakdown;
   classification: OverlapClassification;
   explanation: string[];
@@ -110,6 +142,15 @@ export type CoordinationDecision =
   | 'Institution Identity Mismatch' 
   | 'Further Review Required';
 
+export interface SharedDocumentRegistryItem {
+  id: string;
+  documentTitle: string;
+  requestedByBureau: BureauType;
+  requestDate: string;
+  status: 'Requested' | 'Received & Verified' | 'Pending Institution';
+  fileRef?: string;
+}
+
 export interface CoordinationGroup {
   id: string; // e.g. "CG-008"
   title: string;
@@ -122,6 +163,7 @@ export interface CoordinationGroup {
   jointDirectives: string[];
   leadBureau: BureauType;
   participatingBureaus: BureauType[];
+  sharedDocuments: SharedDocumentRegistryItem[];
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -134,7 +176,7 @@ export interface CaseAction {
   timestamp: string;
   actor: string;
   actorBureau: string;
-  actionType: 'Status Change' | 'Official Assigned' | 'Coordination Decision' | 'Inspection Ordered' | 'Notice Issued' | 'Document Uploaded' | 'Disposal Order';
+  actionType: ActionVocabulary;
   details: string;
 }
 
@@ -145,7 +187,7 @@ export interface AuditLogEntry {
   actorRole: string;
   actorBureau: string;
   action: string;
-  entityType: 'Complaint' | 'Institution' | 'CoordinationGroup' | 'OverlapAlert' | 'Security';
+  entityType: 'Complaint' | 'Institution' | 'CoordinationGroup' | 'OverlapAlert' | 'Security' | 'PreActionCheck';
   entityId: string;
   details: string;
   hash: string;

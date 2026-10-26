@@ -2,342 +2,362 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   ChevronLeft, ChevronRight, Play, Sparkles, Building2, 
-  GitMerge, ShieldCheck, Scale, Cpu, Users, Award, ExternalLink, CheckCircle2 
+  GitMerge, ShieldCheck, Scale, Cpu, Users, Award, ExternalLink, CheckCircle2, Copy 
 } from 'lucide-react';
 
 export const PresentationDeckView: React.FC = () => {
   const { setCurrentView, setSihDemoStep } = useApp();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [copied, setCopied] = useState(false);
 
+  // Exact 6-Slide Master Presentation Deck from AICTE Samanvay final alignment
   const slides = [
     {
       id: 1,
-      badge: 'Smart India Hackathon 2026 | Grand Finale Pitch',
-      title: 'AICTE OneView',
-      subtitle: 'Intelligent Institution Complaint Monitoring, Overlap Detection & Inter-Bureau Coordination Platform',
+      badge: 'Smart India Hackathon 2026 | Problem Statement: SIH26264',
+      heading: 'Integrated Dashboard for Monitoring and Tracking Institution-Related Complaint Cases Across AICTE Bureaus/Cells',
+      subtitle: 'Theme: Smart Automation | Category: Software',
       content: (
-        <div className="space-y-6 max-w-3xl mx-auto text-center">
+        <div className="space-y-6 max-w-3xl mx-auto text-center py-4">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 p-1 mx-auto flex items-center justify-center shadow-xl">
             <div className="w-full h-full bg-[#0B2545] rounded-xl flex items-center justify-center">
-              <span className="font-extrabold text-amber-400 text-3xl font-['Outfit']">OV</span>
+              <span className="font-extrabold text-amber-400 text-3xl font-['Outfit']">सम</span>
             </div>
           </div>
           
-          <p className="text-lg text-slate-200 font-light leading-relaxed">
-            Eliminating operational silos across the <strong className="text-amber-400">Regulation Bureau (RB)</strong>, <strong className="text-amber-400">Public Grievance Redressal Cell (PGRC)</strong>, and <strong className="text-amber-400">Approval Bureau (AB)</strong> through verified institution registries and explainable AI overlap inference.
-          </p>
+          <div>
+            <h1 className="text-3xl font-extrabold text-white font-['Outfit'] tracking-tight">
+              AICTE Samanvay
+            </h1>
+            <p className="text-amber-400 font-semibold text-base mt-1">
+              Institution Case Intelligence and Coordination Layer
+            </p>
+            <p className="text-xs text-slate-300 italic mt-0.5">
+              "One Institution. Connected Cases. Coordinated Action."
+            </p>
+          </div>
 
-          <div className="grid grid-cols-3 gap-4 pt-4 text-xs font-semibold">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left pt-2 text-xs">
             <div className="p-3 bg-white/10 rounded-xl border border-white/10">
-              <span className="text-amber-400 block text-sm font-bold">1 Institution</span>
-              <span className="text-slate-300">Consolidated Single Source of Truth</span>
+              <span className="text-slate-400 text-[10px] block">Problem ID</span>
+              <strong className="text-white text-xs">SIH26264</strong>
             </div>
             <div className="p-3 bg-white/10 rounded-xl border border-white/10">
-              <span className="text-emerald-400 block text-sm font-bold">Intelligent Overlap</span>
-              <span className="text-slate-300">Semantic & Rule Detection Engine</span>
+              <span className="text-slate-400 text-[10px] block">Theme</span>
+              <strong className="text-white text-xs">Smart Automation</strong>
             </div>
             <div className="p-3 bg-white/10 rounded-xl border border-white/10">
-              <span className="text-purple-400 block text-sm font-bold">Coordinated Action</span>
-              <span className="text-slate-300">Zero Loss of Bureau Jurisdiction</span>
+              <span className="text-slate-400 text-[10px] block">Category</span>
+              <strong className="text-white text-xs">Software</strong>
+            </div>
+            <div className="p-3 bg-white/10 rounded-xl border border-white/10">
+              <span className="text-slate-400 text-[10px] block">Organization</span>
+              <strong className="text-amber-400 text-xs">AICTE (Govt of India)</strong>
             </div>
           </div>
         </div>
       ),
-      speakerNotes: 'Judges, technical education institutions frequently receive simultaneous complaints in PGRC from students, and in the Regulation Bureau from anonymous whistleblowers. Today, these two bureaus operate in silos. AICTE OneView bridges them seamlessly without violating bureau autonomy.'
+      bullets: [
+        'Problem Statement ID: SIH26264',
+        'Title: Integrated Dashboard for Monitoring and Tracking Institution Cases',
+        'Theme: Smart Automation | Category: Software',
+        'Final Solution: AICTE Samanvay (Case Intelligence & Coordination Layer)',
+        'Tagline: One Institution. Connected Cases. Coordinated Action.'
+      ]
     },
     {
       id: 2,
-      badge: 'The Administrative Challenge',
-      title: 'The Inter-Bureau Silo Dilemma',
-      subtitle: 'Why Technical Education Grievance Monitoring is Currently Vulnerable',
+      badge: 'Slide 2: Proposed Solution',
+      heading: 'AICTE Samanvay: Institution Case Intelligence and Coordination Layer',
+      subtitle: 'Overlay on existing systems — not a replacement',
       content: (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          <div className="p-5 bg-rose-950/40 border border-rose-500/40 rounded-2xl space-y-3">
-            <div className="p-2.5 bg-rose-500/20 text-rose-400 rounded-xl w-fit">
-              <Building2 className="w-6 h-6" />
-            </div>
-            <h4 className="font-bold text-base text-rose-300">Information Blindspots</h4>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              When Regulation Bureau issues a show cause notice for fee cap violations, PGRC has zero real-time visibility and may independently start a separate, redundant inquiry.
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto text-left text-xs">
+          <div className="p-5 bg-slate-800/80 border border-slate-700 rounded-2xl space-y-2.5">
+            <h4 className="font-bold text-amber-400 text-sm flex items-center gap-2">
+              <Building2 className="w-4 h-4" />
+              <span>The Gap & Core Solution</span>
+            </h4>
+            <ul className="space-y-2 text-slate-300">
+              <li className="flex items-start gap-2">
+                <span className="text-amber-400 font-bold">•</span>
+                <span><strong>The gap:</strong> same institution has cases open in RB, PGRC & other cells with no shared view.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-amber-400 font-bold">•</span>
+                <span><strong>Overlay, not a replacement:</strong> imports cases from existing systems with no re-entry (CSV/Excel prototype).</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-amber-400 font-bold">•</span>
+                <span><strong>Institution 360:</strong> one profile per AICTE Permanent ID with all cases, status, and history.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-amber-400 font-bold">•</span>
+                <span><strong>Unified dashboard:</strong> pending, under process, disposed, transferred, escalated & overdue cases.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-amber-400 font-bold">•</span>
+                <span><strong>Coordination Workspace:</strong> link cases (never merge), record decisions, keep an audit trail.</span>
+              </li>
+            </ul>
           </div>
 
-          <div className="p-5 bg-amber-950/40 border border-amber-500/40 rounded-2xl space-y-3">
-            <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-xl w-fit">
-              <Scale className="w-6 h-6" />
-            </div>
-            <h4 className="font-bold text-base text-amber-300">Conflicting Regulatory Orders</h4>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Uncoordinated inquiries risk contradictory outcomes (e.g. one Bureau dismissing a case while another orders an intake penalty), giving non-compliant colleges legal loopholes.
-            </p>
-          </div>
-
-          <div className="p-5 bg-blue-950/40 border border-blue-500/40 rounded-2xl space-y-3">
-            <div className="p-2.5 bg-blue-500/20 text-blue-400 rounded-xl w-fit">
-              <Clock className="w-6 h-6" />
-            </div>
-            <h4 className="font-bold text-base text-blue-300">Wasted Administrative Bandwidth</h4>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Duplicate inspections, multiple notices, and separate officer assignments waste valuable AICTE personnel time and delay student grievance disposal by weeks.
-            </p>
+          <div className="p-5 bg-slate-800/80 border border-amber-500/30 rounded-2xl space-y-2.5">
+            <h4 className="font-bold text-amber-400 text-sm flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              <span>Headline Innovation</span>
+            </h4>
+            <ul className="space-y-2 text-slate-300">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span><strong>Pre-action check (HEADLINE):</strong> before a notice or doc request, see what another Bureau has done.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span><strong>3-level engine:</strong> L1 co-activity → L2 related issue → L3 duplicate/conflicting action.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span><strong>Multilingual text matching:</strong> Hindi, English and Hinglish complaints cross-referenced.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span><strong>Human decides:</strong> AI only recommends; nothing is auto-merged, auto-closed or auto-blocked.</span>
+              </li>
+            </ul>
           </div>
         </div>
       ),
-      speakerNotes: 'The problem is not lack of effort from AICTE officials; it is the absence of an intelligent bridge that detects underlying nexus when different words describe the same core misconduct.'
+      bullets: [
+        'The gap: same institution has cases in RB, PGRC & other cells with no shared view.',
+        'Overlay, not a replacement: imports cases from existing systems with zero re-entry.',
+        'Institution 360: one profile per AICTE Permanent ID with all cases, Bureaus & status.',
+        'Unified dashboard: pending, under process, disposed, transferred, escalated & overdue.',
+        'Alert: "Potential Overlapping Cases — Coordination Required" with transparent reasons.',
+        'Coordination Workspace: link cases (never merge), record decisions, keep an audit trail.',
+        'Pre-action check: before a notice or doc request, see what another Bureau has already done.',
+        '3-level engine: L1 co-activity → L2 related issue → L3 duplicate/conflicting action.'
+      ]
     },
     {
       id: 3,
-      badge: 'Core Innovation',
-      title: 'The Explainable Overlap Engine',
-      subtitle: 'How AICTE OneView Detects Hidden Case Relationships in Real-Time',
+      badge: 'Slide 3: Technical Approach',
+      heading: 'Architecture, Stack & Ingestion Pipeline',
+      subtitle: 'Open-Source, API-Ready & Secure on Government Cloud',
       content: (
-        <div className="space-y-4 max-w-4xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
-            <div className="p-4 bg-slate-800/80 border border-emerald-500/40 rounded-xl">
-              <span className="text-xs font-bold text-emerald-400 block mb-1">1. Institution Identity</span>
-              <div className="text-2xl font-bold font-mono text-white mb-1">40 Pts</div>
-              <p className="text-[11px] text-slate-400">Verified AICTE Permanent ID takes strict precedence over fuzzy name variants.</p>
-            </div>
-
-            <div className="p-4 bg-slate-800/80 border border-amber-500/40 rounded-xl">
-              <span className="text-xs font-bold text-amber-400 block mb-1">2. Semantic Cosine</span>
-              <div className="text-2xl font-bold font-mono text-white mb-1">30 Pts</div>
-              <p className="text-[11px] text-slate-400">Sentence embeddings & lemma matching ("excessive fees" vs "unauthorized charges").</p>
-            </div>
-
-            <div className="p-4 bg-slate-800/80 border border-blue-500/40 rounded-xl">
-              <span className="text-xs font-bold text-blue-400 block mb-1">3. Grievance Domain</span>
-              <div className="text-2xl font-bold font-mono text-white mb-1">15 Pts</div>
-              <p className="text-[11px] text-slate-400">Taxonomy match across 8 official AICTE grievance classifications.</p>
-            </div>
-
-            <div className="p-4 bg-slate-800/80 border border-purple-500/40 rounded-xl">
-              <span className="text-xs font-bold text-purple-400 block mb-1">4. Temporal & Proofs</span>
-              <div className="text-2xl font-bold font-mono text-white mb-1">15 Pts</div>
-              <p className="text-[11px] text-slate-400">Proximity decay function evaluating whether cases were received in same cycle.</p>
+        <div className="space-y-4 max-w-4xl mx-auto text-left text-xs">
+          <div className="p-4 bg-slate-800/90 rounded-xl border border-slate-700">
+            <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block mb-2">
+              Methodology Flow
+            </span>
+            <div className="p-3 bg-slate-900 rounded-lg border border-slate-700 font-mono text-[11px] text-slate-200 overflow-x-auto whitespace-nowrap">
+              CSV/Excel import (API-ready) → Validate → Institution resolution → L1 co-activity → L2 related issue → L3 action conflict → Alert with reasons → Pre-action check → Coordination Workspace → Dashboard · SLA · Audit trail
             </div>
           </div>
 
-          <div className="p-4 bg-white/5 rounded-xl border border-white/10 text-xs text-slate-300 flex items-center justify-between">
-            <span><strong>Strict Regulatory Policy:</strong> AI generates explainable recommendations, NEVER automated case merging.</span>
-            <span className="text-amber-400 font-mono text-[11px]">Human Decision Control</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 bg-slate-800/80 rounded-xl border border-slate-700 space-y-1.5">
+              <span className="text-xs font-bold text-emerald-400 block">Prototype (Built & Demonstrable):</span>
+              <p className="text-slate-300 text-[11px] leading-relaxed">
+                CSV import, Institution 360, L1/L2 alerts with explainable reasons, pre-action check, Coordination Workspace + audit log, and SLA dashboard.
+              </p>
+            </div>
+
+            <div className="p-4 bg-slate-800/80 rounded-xl border border-slate-700 space-y-1.5">
+              <span className="text-xs font-bold text-purple-400 block">Roadmap (Post-Pilot):</span>
+              <p className="text-slate-300 text-[11px] leading-relaxed">
+                Live API adapters to RB/PGRC databases, pre-action API inside existing officer tools, Institution Attention Indicator, and SMS/email notifications.
+              </p>
+            </div>
+          </div>
+
+          <div className="text-[11px] text-slate-400 bg-white/5 p-3 rounded-lg border border-white/10 flex items-center justify-between">
+            <span><strong>Stack:</strong> React, TypeScript, Tailwind, Recharts | FastAPI, PostgreSQL + pgvector | RapidFuzz, Multilingual Embeddings</span>
+            <span className="text-amber-400 font-mono">100% On-Premise Capable</span>
           </div>
         </div>
       ),
-      speakerNotes: 'Look at our formula: 40 points for verified Permanent ID, 30 points for semantic similarity, 15 for category, and 15 for timeline and evidence. When a case hits 80+, an urgent alert is raised with exact explanations of why they match.'
+      bullets: [
+        'Stack: React + TypeScript, Tailwind, Recharts; Python FastAPI; PostgreSQL + pgvector.',
+        'Matching: RapidFuzz and rule engine; multilingual embeddings (LaBSE / multilingual-e5).',
+        'Flow: CSV/Excel import → Validate → Institution resolution → L1 → L2 → L3 → Alert.',
+        'Pre-action check: checks prior Bureau actions before notice dispatch.',
+        'Coordination Workspace: links cases, proposes lead Bureau, logs decisions.',
+        'Prototype (built): import, Institution 360, L1/L2 alerts, pre-action check, workspace, SLA.',
+        'Roadmap: live API adapters, pre-action API inside existing tools, notifications.'
+      ]
     },
     {
       id: 4,
-      badge: 'Administrative Autonomy',
-      title: 'The Cross-Bureau Coordination Workspace',
-      subtitle: 'Preserving Statutory Authority while Eliminating Information Silos',
+      badge: 'Slide 4: Feasibility and Viability',
+      heading: 'Practical Rollout, Risk Matrix & Compliance',
+      subtitle: 'Designed for DPDP Act 2023 & GIGW Alignment',
       content: (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto text-left">
-          <div className="p-5 bg-slate-800/80 border border-slate-700 rounded-2xl space-y-3">
-            <h4 className="font-bold text-amber-400 text-sm flex items-center gap-2">
-              <GitMerge className="w-4 h-4" />
-              <span>What AICTE OneView DOES</span>
-            </h4>
-            <ul className="text-xs text-slate-300 space-y-2">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                <span>Displays complaints side-by-side with semantic text highlighting.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                <span>Enables joint inter-bureau directives (e.g. shared inspection teams).</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                <span>Links cases under unified Coordination Groups (e.g. CG-008).</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                <span>Logs every administrative finding to an immutable audit trail.</span>
-              </li>
-            </ul>
+        <div className="space-y-4 max-w-4xl mx-auto text-left text-xs">
+          <div className="overflow-x-auto bg-slate-800/90 rounded-xl border border-slate-700">
+            <table className="w-full text-left text-[11px]">
+              <thead className="bg-slate-900 text-slate-300 uppercase font-semibold text-[10px] border-b border-slate-700">
+                <tr>
+                  <th className="py-2 px-3">Identified Risk</th>
+                  <th className="py-2 px-3">Engineered Mitigation</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-700/60 text-slate-200">
+                <tr>
+                  <td className="py-2 px-3 font-semibold text-rose-300">Inconsistent institution IDs/names</td>
+                  <td className="py-2 px-3">Permanent ID first, fuzzy match, human verification queue</td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-3 font-semibold text-amber-300">False overlap alerts</td>
+                  <td className="py-2 px-3">Rules first, severity levels, reasons shown, officer can dismiss</td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-3 font-semibold text-blue-300">Incomplete action history</td>
+                  <td className="py-2 px-3">Defined action vocabulary, start with 4-5 core rules</td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-3 font-semibold text-purple-300">Existing systems lack APIs</td>
+                  <td className="py-2 px-3">CSV and DB sync fallback, pluggable adapters</td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-3 font-semibold text-emerald-300">Unauthorized access / privacy</td>
+                  <td className="py-2 px-3">Role-based access, audit log, PII masking, local AI hosting</td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-3 font-semibold text-slate-300">Unverified deadlines</td>
+                  <td className="py-2 px-3">SLA thresholds configurable, labelled as sample rules</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
-          <div className="p-5 bg-slate-800/80 border border-slate-700 rounded-2xl space-y-3">
-            <h4 className="font-bold text-rose-400 text-sm flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4" />
-              <span>What AICTE OneView NEVER Does</span>
-            </h4>
-            <ul className="text-xs text-slate-300 space-y-2">
-              <li className="flex items-start gap-2">
-                <span className="text-rose-400 font-bold shrink-0">✕</span>
-                <span>Does NOT automatically merge or delete distinct case IDs.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-rose-400 font-bold shrink-0">✕</span>
-                <span>Does NOT usurp the statutory authority of Regulation Bureau or PGRC.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-rose-400 font-bold shrink-0">✕</span>
-                <span>Does NOT expose restricted complainant personal data without clearance.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-rose-400 font-bold shrink-0">✕</span>
-                <span>Does NOT make black-box automated regulatory decisions.</span>
-              </li>
-            </ul>
+          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-slate-300 text-[11px] flex items-center justify-between">
+            <span><strong>Footnote:</strong> No accuracy claims before testing; metrics will be measured on a labelled test set in pilot.</span>
+            <span className="text-amber-400 font-mono text-[10px]">Zero False Promises</span>
           </div>
         </div>
       ),
-      speakerNotes: 'Judges often ask: "Will linking cases take away a Bureau\'s power?" No! Case C-101 remains in Regulation Bureau; Case C-205 remains in PGRC. They share an evidentiary bridge CG-008.'
+      bullets: [
+        'Open-source stack, runs on synthetic data, deployable on-premise or government cloud.',
+        'Overlay design means no change to existing Bureau workflows.',
+        'Rollout plan: prototype → authorized pilot with RB + PGRC → all Bureaus & regional offices.',
+        'Inconsistent IDs: Permanent ID first, fuzzy match fallback, human verification queue.',
+        'False alerts: rules first, severity levels, reasons shown, officer can dismiss.',
+        'No APIs: CSV/DB sync fallback; pluggable adapters.',
+        'Governance: role-based access, audit log, PII masking, designed for DPDP/GIGW alignment.',
+        'Footnote: No accuracy claims before testing; metrics will be measured on a labelled test set.'
+      ]
     },
     {
       id: 5,
-      badge: 'SIH Live Demonstration',
-      title: 'Scenario Walkthrough: ABC Engineering College',
-      subtitle: 'The Exact 7-Step SIH Scenario Demonstrating the Platform',
+      badge: 'Slide 5: Impact and Benefits',
+      heading: 'Administrative Value & Public Redressal',
+      subtitle: 'Quantifiable Benefits for Officers, Management & Students',
       content: (
-        <div className="space-y-4 max-w-4xl mx-auto text-left">
-          <div className="p-4 bg-amber-500/10 border border-amber-500/40 rounded-xl flex items-center justify-between">
-            <div>
-              <span className="font-bold text-amber-400 text-xs block">Featured Institution:</span>
-              <span className="text-sm font-semibold text-white">ABC Engineering College (AICTE Permanent ID: 1-43598711)</span>
-            </div>
-            <button
-              onClick={() => {
-                setSihDemoStep(1);
-                setCurrentView('dashboard');
-              }}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition shadow flex items-center gap-1.5"
-            >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Launch Live Interactive Walkthrough</span>
-            </button>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl mx-auto text-left text-xs">
+          <div className="p-4 bg-slate-800/80 border border-slate-700 rounded-xl space-y-1">
+            <strong className="text-amber-400 block">For Officers</strong>
+            <p className="text-slate-300 text-[11px]">Full institution context before acting; prevents duplicate document demands.</p>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700">
-              <strong className="text-blue-400 block mb-1">Phase 1: Existing Case</strong>
-              <p className="text-slate-300 text-[11px]">Regulation Bureau has active case C-101 on mandatory development fees.</p>
-            </div>
-            <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700">
-              <strong className="text-amber-400 block mb-1">Phase 2: PGRC Intake</strong>
-              <p className="text-slate-300 text-[11px]">PGRC registers C-205 on unauthorized lab & exam fees. Overlap Engine fires 88% alert!</p>
-            </div>
-            <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700">
-              <strong className="text-emerald-400 block mb-1">Phase 3: Joint Action</strong>
-              <p className="text-slate-300 text-[11px]">Reviewer binds cases under CG-008, issues joint audit directive, and logs SHA256 audit entry.</p>
-            </div>
+          <div className="p-4 bg-slate-800/80 border border-slate-700 rounded-xl space-y-1">
+            <strong className="text-blue-400 block">For Management</strong>
+            <p className="text-slate-300 text-[11px]">Real-time visibility, workload tracking, and accountability across all Bureaus.</p>
+          </div>
+          <div className="p-4 bg-slate-800/80 border border-slate-700 rounded-xl space-y-1">
+            <strong className="text-emerald-400 block">Administrative</strong>
+            <p className="text-slate-300 text-[11px]">Fewer duplicate or conflicting actions; accelerated case disposal.</p>
+          </div>
+          <div className="p-4 bg-slate-800/80 border border-slate-700 rounded-xl space-y-1">
+            <strong className="text-purple-400 block">Economic</strong>
+            <p className="text-slate-300 text-[11px]">Less officer time lost to repeated inspections and duplicate paperwork.</p>
+          </div>
+          <div className="p-4 bg-slate-800/80 border border-slate-700 rounded-xl space-y-1">
+            <strong className="text-rose-400 block">Social</strong>
+            <p className="text-slate-300 text-[11px]">Quicker redressal for students and faculty facing extortion or harassment.</p>
+          </div>
+          <div className="p-4 bg-slate-800/80 border border-slate-700 rounded-xl space-y-1">
+            <strong className="text-cyan-400 block">Metrics (Pilot Baselined)</strong>
+            <p className="text-slate-300 text-[11px]">Duplicate-action rate, time to detect overlap, overdue cases, alert precision.</p>
           </div>
         </div>
       ),
-      speakerNotes: 'You can click "Launch Live Interactive Walkthrough" right now to step through this exact sequence live in the working prototype.'
+      bullets: [
+        'Officers: full institution context before acting; no duplicate document demands.',
+        'Management: real-time cross-bureau visibility and accountability.',
+        'Administrative: fewer duplicate or conflicting actions, faster disposal.',
+        'Economic: less officer time lost to repeated work and parallel inquiries.',
+        'Social: quicker grievance redressal for students and faculty.',
+        'Transparency: complete chronological action history with tamper-resistant audit trail.',
+        'Metrics to baseline in pilot: duplicate-action rate, time to detect overlap, overdue cases, alert precision.'
+      ]
     },
     {
       id: 6,
-      badge: 'System Architecture',
-      title: 'Technical Stack & Data Architecture',
-      subtitle: 'Scalable, Secure & National-Scale Ready',
-      content: (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto text-left">
-          <div className="p-5 bg-slate-800/80 border border-slate-700 rounded-2xl space-y-2">
-            <div className="p-2 bg-blue-500/20 text-blue-400 rounded-lg w-fit">
-              <Cpu className="w-5 h-5" />
-            </div>
-            <h4 className="font-bold text-white text-sm">Frontend & UI Layer</h4>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              React 19 + TypeScript + Vite + Tailwind CSS. Componentized architecture, responsive design, Recharts analytics, and zero external runtime dependencies.
-            </p>
-          </div>
-
-          <div className="p-5 bg-slate-800/80 border border-slate-700 rounded-2xl space-y-2">
-            <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg w-fit">
-              <Scale className="w-5 h-5" />
-            </div>
-            <h4 className="font-bold text-white text-sm">NLP & Inference Engine</h4>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Sentence Transformers embeddings, cosine n-gram similarity, and domain synonym expansion tailored specifically for Indian higher education terminology.
-            </p>
-          </div>
-
-          <div className="p-5 bg-slate-800/80 border border-slate-700 rounded-2xl space-y-2">
-            <div className="p-2 bg-purple-500/20 text-purple-400 rounded-lg w-fit">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <h4 className="font-bold text-white text-sm">Security & Audit Vault</h4>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              PostgreSQL relational schema with pgvector vector indexing. Immutable audit logging with SHA256 cryptographic chain and 6-tier RBAC.
-            </p>
-          </div>
-        </div>
-      ),
-      speakerNotes: 'Our architecture is production-ready. It uses standard web standards, lightweight client inference for rapid demo responsiveness, and a clean PostgreSQL relational schema with pgvector extension support.'
-    },
-    {
-      id: 7,
-      badge: 'Measurable Impact',
-      title: 'Quantifiable Administrative Value',
-      subtitle: 'Transforming AICTE Operational Efficiency',
-      content: (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto text-center">
-          <div className="p-5 bg-slate-800/80 border border-emerald-500/40 rounded-2xl">
-            <div className="text-3xl font-extrabold font-['Outfit'] text-emerald-400 mb-1">45%</div>
-            <span className="text-xs font-bold text-white block">Reduction in TAT</span>
-            <p className="text-[10px] text-slate-400 mt-1">Average disposal turnaround drops from 41 to 22 days.</p>
-          </div>
-
-          <div className="p-5 bg-slate-800/80 border border-blue-500/40 rounded-2xl">
-            <div className="text-3xl font-extrabold font-['Outfit'] text-blue-400 mb-1">100%</div>
-            <span className="text-xs font-bold text-white block">Silo Elimination</span>
-            <p className="text-[10px] text-slate-400 mt-1">Cross-referencing between RB, PGRC, and Approval Bureau.</p>
-          </div>
-
-          <div className="p-5 bg-slate-800/80 border border-amber-500/40 rounded-2xl">
-            <div className="text-3xl font-extrabold font-['Outfit'] text-amber-400 mb-1">0</div>
-            <span className="text-xs font-bold text-white block">Conflicting Rulings</span>
-            <p className="text-[10px] text-slate-400 mt-1">Zero instances of contradictory show-cause orders.</p>
-          </div>
-
-          <div className="p-5 bg-slate-800/80 border border-purple-500/40 rounded-2xl">
-            <div className="text-3xl font-extrabold font-['Outfit'] text-purple-400 mb-1">10,000+</div>
-            <span className="text-xs font-bold text-white block">Institutions Indexed</span>
-            <p className="text-[10px] text-slate-400 mt-1">Scalable across all technical colleges and polytechnics in India.</p>
-          </div>
-        </div>
-      ),
-      speakerNotes: 'With 45% faster disposal, complete elimination of duplicate inquiries, and zero conflicting orders, AICTE OneView saves thousands of hours of bureaucratic effort and restores student trust.'
-    },
-    {
-      id: 8,
-      badge: 'Evaluation & Defense',
-      title: 'Addressing Judge Inquiries & Edge Cases',
-      subtitle: 'Robust Engineering Addressing Real-World Challenges',
+      badge: 'Slide 6: Research and References',
+      heading: 'Citations, Technical Standards & Guidelines',
+      subtitle: 'Grounding AICTE Samanvay in Official Standards',
       content: (
         <div className="space-y-3 max-w-4xl mx-auto text-left text-xs">
-          <div className="p-3.5 bg-slate-800/80 rounded-xl border border-slate-700">
-            <strong className="text-amber-400 block mb-1">Q: How do you handle false positives when two colleges have similar names?</strong>
-            <p className="text-slate-300 text-[11px]">
-              AICTE OneView anchors every record to the verified AICTE Permanent ID (40 points). Name similarity alone cannot trigger an overlap alert without manual verification.
-            </p>
+          <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 flex justify-between items-center">
+            <div>
+              <strong className="text-amber-400 block">SIH 2026 Problem Statement SIH26264</strong>
+              <span className="text-slate-300 text-[11px]">All India Council for Technical Education (AICTE), Ministry of Education</span>
+            </div>
+            <span className="text-[10px] text-slate-400 font-mono">Problem ID: SIH26264</span>
           </div>
 
-          <div className="p-3.5 bg-slate-800/80 rounded-xl border border-slate-700">
-            <strong className="text-blue-400 block mb-1">Q: Can regional language complaints (Hindi, Marathi, Tamil) be processed?</strong>
-            <p className="text-slate-300 text-[11px]">
-              The underlying Sentence Transformers model utilizes multilingual embeddings (e.g. IndicBERT / multilingual-MiniLM), enabling cross-lingual semantic matching between English regulatory notices and vernacular student complaints.
-            </p>
+          <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 flex justify-between items-center">
+            <div>
+              <strong className="text-blue-400 block">AICTE Official Portal & Permanent ID Standard</strong>
+              <span className="text-slate-300 text-[11px]">https://www.aicte-india.org — Approval Process Handbook 2024-27</span>
+            </div>
+            <span className="text-[10px] text-slate-400 font-mono">Permanent ID Key</span>
           </div>
 
-          <div className="p-3.5 bg-slate-800/80 rounded-xl border border-slate-700">
-            <strong className="text-emerald-400 block mb-1">Q: Is student personal data protected across bureaus?</strong>
-            <p className="text-slate-300 text-[11px]">
-              Yes. Role-based access control redacts complainant personal identification details from cross-bureau views until a formal joint coordination group is authorized.
-            </p>
+          <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 flex justify-between items-center">
+            <div>
+              <strong className="text-emerald-400 block">CPGRAMS (Centralised Public Grievance Redress and Monitoring System)</strong>
+              <span className="text-slate-300 text-[11px]">Department of Administrative Reforms and Public Grievances (DARPG), Govt of India</span>
+            </div>
+            <span className="text-[10px] text-slate-400 font-mono">CPGRAMS Protocol</span>
+          </div>
+
+          <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 flex justify-between items-center">
+            <div>
+              <strong className="text-purple-400 block">DPDP Act 2023 & Guidelines for Indian Government Websites (GIGW 3.0)</strong>
+              <span className="text-slate-300 text-[11px]">Digital Personal Data Protection Act, MeitY & NIC National Security Guidelines</span>
+            </div>
+            <span className="text-[10px] text-slate-400 font-mono">Designed for Alignment</span>
+          </div>
+
+          <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700 flex justify-between items-center">
+            <div>
+              <strong className="text-rose-400 block">Open Source Technical Documentation</strong>
+              <span className="text-slate-300 text-[11px]">pgvector, Sentence Transformers (LaBSE / multilingual-e5), RapidFuzz, FastAPI</span>
+            </div>
+            <span className="text-[10px] text-slate-400 font-mono">Open-Source Core</span>
           </div>
         </div>
       ),
-      speakerNotes: 'We have thoroughly thought through edge cases: verified Permanent IDs prevent false positives from similar names, multilingual embeddings support vernacular complaints, and RBAC redacts personal data.'
+      bullets: [
+        'SIH 2026 problem statement SIH26264 (AICTE).',
+        'AICTE official portal: https://www.aicte-india.org',
+        'CPGRAMS, the Government of India grievance redressal framework.',
+        'Digital Personal Data Protection (DPDP) Act 2023 & GIGW 3.0 guidelines.',
+        'Technical docs: pgvector, Sentence Transformers (LaBSE / multilingual-e5), FastAPI, PostgreSQL, RapidFuzz.'
+      ]
     }
   ];
 
   const currentSlideData = slides[currentSlide];
 
-  // Keyboard navigation
+  // Copy bullets for PPT generator
+  const copySlideText = () => {
+    const text = `### ${currentSlideData.heading}\n\n` + currentSlideData.bullets.map(b => `- ${b}`).join('\n');
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === 'PageDown') {
@@ -352,9 +372,8 @@ export const PresentationDeckView: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Slide Presenter Stage */}
-      <div className="bg-gradient-to-br from-[#0B2545] via-[#13315C] to-[#081B33] text-white rounded-3xl p-8 min-h-[520px] shadow-2xl border border-slate-700 flex flex-col justify-between relative overflow-hidden">
-        {/* Subtle decorative background shapes */}
+      {/* Presenter Stage */}
+      <div className="bg-gradient-to-br from-[#0B2545] via-[#13315C] to-[#081B33] text-white rounded-3xl p-8 min-h-[530px] shadow-2xl border border-slate-700 flex flex-col justify-between relative overflow-hidden">
         <div className="absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
         <div className="absolute -left-20 -top-20 w-80 h-80 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
 
@@ -366,29 +385,39 @@ export const PresentationDeckView: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
-            <span>Slide {currentSlide + 1} of {slides.length}</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={copySlideText}
+              className="flex items-center gap-1 px-2.5 py-1 bg-white/10 hover:bg-white/20 text-slate-200 rounded text-xs transition"
+              title="Copy slide bullet points"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>{copied ? 'Copied!' : 'Copy Slide Text'}</span>
+            </button>
+            <span className="text-xs text-slate-400 font-mono">
+              Slide {currentSlide + 1} of {slides.length}
+            </span>
           </div>
         </div>
 
-        {/* Slide Title & Subtitle */}
-        <div className="text-center my-4 z-10">
-          <h2 className="text-2xl sm:text-3xl font-extrabold font-['Outfit'] text-white tracking-tight mb-1">
-            {currentSlideData.title}
+        {/* Title */}
+        <div className="text-center my-3 z-10">
+          <h2 className="text-xl sm:text-2xl font-extrabold font-['Outfit'] text-white tracking-tight mb-1 max-w-3xl mx-auto">
+            {currentSlideData.heading}
           </h2>
-          <p className="text-sm text-slate-300 font-normal">
+          <p className="text-xs text-slate-300 font-normal">
             {currentSlideData.subtitle}
           </p>
         </div>
 
-        {/* Slide Content Body */}
+        {/* Content */}
         <div className="my-auto z-10">
           {currentSlideData.content}
         </div>
 
-        {/* Bottom Navigation & Controls */}
-        <div className="flex items-center justify-between pt-6 border-t border-slate-800 z-10">
-          <div className="flex items-center gap-1.5">
+        {/* Controls */}
+        <div className="flex items-center justify-between pt-5 border-t border-slate-800 z-10">
+          <div className="flex items-center gap-2">
             {slides.map((_, idx) => (
               <button
                 key={idx}
@@ -423,19 +452,19 @@ export const PresentationDeckView: React.FC = () => {
         </div>
       </div>
 
-      {/* Speaker Notes / Judge Defense Cue Card */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3">
-        <div className="p-2 bg-amber-50 text-amber-700 rounded-lg shrink-0">
-          <Sparkles className="w-4 h-4" />
-        </div>
-        <div>
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-            Presenter Pitch Script & Key Talking Points:
+      {/* Slide Text Bullets (Direct copy for PPT template) */}
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-xs">
+        <div className="flex items-center justify-between mb-2">
+          <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px]">
+            Master Slide {currentSlide + 1} Bullets (Formatted for 6-Slide SIH Template):
           </span>
-          <p className="text-xs text-slate-700 leading-relaxed font-sans mt-0.5">
-            "{currentSlideData.speakerNotes}"
-          </p>
+          <span className="text-[10px] text-slate-400 font-mono">6 to 8 concise points · No invented stats</span>
         </div>
+        <ul className="space-y-1 text-slate-700 list-disc pl-5">
+          {currentSlideData.bullets.map((b, idx) => (
+            <li key={idx}>{b}</li>
+          ))}
+        </ul>
       </div>
     </div>
   );

@@ -1,18 +1,21 @@
-# AICTE OneView: Intelligent Institution Complaint Monitoring & Overlap Coordination Platform
+# AICTE Samanvay: Institution Case Intelligence and Coordination Layer
 
 [![Smart India Hackathon 2026](https://img.shields.io/badge/SIH-2026-orange.svg)](https://sih.gov.in)
-[![AICTE](https://img.shields.io/badge/Council-AICTE%20Gov-blue.svg)](https://www.aicte-india.org)
+[![Problem Statement](https://img.shields.io/badge/Problem%20ID-SIH26264-blue.svg)]()
+[![Theme](https://img.shields.io/badge/Theme-Smart%20Automation-purple.svg)]()
 [![Status](https://img.shields.io/badge/Prototype-Ready-emerald.svg)]()
 
-> **Guiding Principle:** *One Institution, One Consolidated View, Intelligent Overlap Detection, and Coordinated Administrative Action.*
+> **Tagline:** *One Institution. Connected Cases. Coordinated Action.*
 
-AICTE OneView is a centralized, intelligent web platform proposed for the All India Council for Technical Education (AICTE) to monitor, track, analyze, and coordinate institution-related complaints across the **Regulation Bureau (RB)**, **Public Grievance Redressal Cell (PGRC)**, and **Approval Bureau (AB)**.
+AICTE Samanvay is an **overlay on existing systems** (Regulation Bureau, PGRC, Approval Bureau), **not a replacement portal**. It connects related cases, resolves them to one verified institution profile, detects overlaps across three distinct levels, and warns officers through a **Pre-Action Check** before they duplicate or contradict another Bureau's action.
+
+AI recommends; authorized officials always decide. Nothing is auto-merged, auto-closed, or auto-blocked.
 
 ---
 
-## ⚡ Quick Start for Judges & Presenters
+## ⚡ Quick Start for Judges & Evaluators
 
-The development server is running locally:
+Run the web application locally:
 
 ```bash
 cd aicte-oneview
@@ -20,29 +23,34 @@ npm install
 npm run dev
 ```
 
-Open your browser to: **[http://localhost:5174](http://localhost:5174)**
+Open: **[http://localhost:5174](http://localhost:5174)**
 
 ---
 
-## 🌟 Key Features
+## 🌟 Core Modules
 
-1. **Executive Workload & Silo Dashboard**: Real-time cross-bureau telemetry, SLA tracking, active overlap alerts, and caseload breakdown.
-2. **Centralized Institution Registry**: Consolidated profiles indexed by verified **AICTE Permanent ID**, containing full multi-bureau grievance histories.
-3. **Live Overlap Detection Engine**:
-   - 40 Pts: Verified Institution Identity
-   - 30 Pts: NLP Semantic Cosine & Synonym Vectors
-   - 15 Pts: AICTE Grievance Taxonomy Domain
-   - 15 Pts: Temporal Proximity & Supporting Evidence
-4. **Cross-Bureau Coordination Workspace**: Side-by-side comparison of cases (e.g. Case C-101 vs C-205) without automatically merging dockets or stripping Bureaus of statutory jurisdiction.
-5. **Interactive SIH Demo Guide**: One-click step-by-step controller walking through the exact 7-step Section 17 demonstration scenario.
-6. **Built-in Pitch Slide Deck**: 8-slide interactive pitch deck with speaker notes and keyboard arrow navigation.
-7. **Tamper-Evident Audit Trail**: Immutable SHA256 hashed audit log of every status transition and coordination directive.
-8. **Council Level Analytics & CSV Export**: Turnaround time metrics, category distributions, and downloadable briefings.
+1. **Ingestion Layer (No Re-entry):** Prototype supports CSV/Excel batch ingestion of synthetic records. Roadmap includes live API/DB adapters.
+2. **Institution 360:** Unique **AICTE Permanent ID** as primary key; RapidFuzz fallback; uncertain matches flagged for human verification.
+3. **3-Level Overlap Engine:**
+   - **L1 Co-Activity:** Rules (always-on) detect multiple Bureaus active on the same institution.
+   - **L2 Related Issue:** Multilingual semantic embeddings (LaBSE / multilingual-e5) for English, Hindi, and Hinglish.
+   - **L3 Duplicate / Conflicting Action Warning:** Evaluates defined action vocabulary (`Notice Issued`, `Documents Requested`, `Inspection Ordered`, `Case Closed`, `Transferred`).
+4. **Pre-Action Check (Headline Innovation):** Warns officers before issuing notices or document demands if another Bureau has already acted.
+5. **Coordination Workspace:** Link cases (never merge), proposed lead Bureau, shared document-request registry ("ask once"), and immutable audit trail.
+6. **Dashboard & Configurable SLA:** Overview of pending, active, and overdue cases; Bureau workload; SLA thresholds configurable as sample rules.
+7. **Built-in 6-Slide Master PPT Deck:** Exact 6-slide presentation deck formatted for the SIH template.
 
 ---
 
 ## 🛠️ Technology Stack
 
-- **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, Lucide Icons, Canvas Confetti
-- **Inference Engine:** Client-side Semantic NLP Cosine Embedding & Domain Synonym Lemmatizer
-- **Backend Architecture:** RESTful APIs, PostgreSQL + pgvector design, SHA256 audit chaining
+- **Frontend:** React 19, TypeScript, Tailwind CSS, Recharts, Lucide Icons, Canvas Confetti
+- **Matching:** Rule engine, RapidFuzz, Multilingual embeddings (Hindi, English, Hinglish)
+- **Backend Architecture:** Python FastAPI, PostgreSQL (+ pgvector)
+- **Governance:** Role-based access control (RBAC), SHA256 audit chaining, designed for DPDP Act 2023 & GIGW 3.0 alignment
+
+---
+
+## 📄 Documentation
+
+- Full Pitch & Presentation Masterplan: [`docs/SIH_DEMO_PRESENTATION_KIT.md`](docs/SIH_DEMO_PRESENTATION_KIT.md)

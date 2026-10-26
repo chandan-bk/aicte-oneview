@@ -1,4 +1,4 @@
-import { Institution, Complaint, OverlapAlert, CoordinationGroup, CaseAction, AuditLogEntry, UserProfile } from '../types';
+import { Institution, Complaint, OverlapAlert, CoordinationGroup, CaseAction, AuditLogEntry, UserProfile, SharedDocumentRegistryItem } from '../types';
 
 export const MOCK_USERS: UserProfile[] = [
   {
@@ -181,14 +181,15 @@ export const INITIAL_COMPLAINTS: Complaint[] = [
     priority: 'High',
     category: 'Unauthorized Fees / Capitation',
     description: 'Institution administration is collecting tuition and development fees significantly exceeding the fee regulatory committee approved caps. Students report being forced to pay Rs. 45,000 per term as mandatory unapproved lab development and examination clearances under duress.',
+    language: 'English',
     complainantType: 'Whistleblower / Anonymous',
     dateOfReceipt: '2026-10-14',
     expectedDisposalDate: '2026-11-14',
-    lastActionDate: '2026-10-21',
-    lastActionSummary: 'Formal Show Cause Notice RB/MH/2026/77 dispatched to Management. Audit team requested ledger.',
+    lastActionType: 'Documents Requested',
+    lastActionDate: '2026-10-18',
+    lastActionSummary: 'Formal request dispatched to Chairman seeking 3-year audited fee ledger & bank accounts.',
     nextActionRequired: 'Review 15-day institutional reply and bank statement audit.',
     supportingDocsCount: 3,
-    coordinationGroupId: undefined,
     overlapAlertId: 'ALT-2026-088',
     isOverdue: false
   },
@@ -204,9 +205,11 @@ export const INITIAL_COMPLAINTS: Complaint[] = [
     priority: 'Medium',
     category: 'Faculty Shortage & Qualifications',
     description: 'Complaint alleging adjunct faculty falsely listed as full-time cadre in mechanical engineering department during 2025 extension of approval (EoA) cycle.',
+    language: 'English',
     complainantType: 'Faculty',
     dateOfReceipt: '2025-08-11',
     expectedDisposalDate: '2025-09-30',
+    lastActionType: 'Case Closed',
     lastActionDate: '2025-09-28',
     lastActionSummary: 'Deficiency verified; intake in B.Tech Mechanical reduced by 30 seats. Compliance confirmed.',
     nextActionRequired: 'Case closed and archived.',
@@ -224,10 +227,12 @@ export const INITIAL_COMPLAINTS: Complaint[] = [
     status: 'Under Review',
     priority: 'Medium',
     category: 'Non-Refund of Caution Deposit',
-    description: 'Graduating batch of 2025 M.Tech students petitioning non-refund of institutional caution deposit (Rs. 15,000 each) pending since August 2025 despite submission of all no-dues clearance forms.',
+    description: 'M.Tech students graduating batch 2025 reporting caution money (deposit) Rs. 15,000 refund pending. College administration wapsi nahi kar raha hai despite complete clearance.',
+    language: 'Hinglish',
     complainantType: 'Student',
     dateOfReceipt: '2026-10-02',
     expectedDisposalDate: '2026-11-02',
+    lastActionType: 'Notice Issued',
     lastActionDate: '2026-10-18',
     lastActionSummary: 'Directive sent to Finance Officer seeking refund status report within 10 days.',
     nextActionRequired: 'Verify bank disbursement proof.',
@@ -246,9 +251,11 @@ export const INITIAL_COMPLAINTS: Complaint[] = [
     priority: 'Critical',
     category: 'Infrastructure Deficiencies',
     description: 'Substandard chemical pharmacology laboratory facilities and non-functioning fire safety infrastructure reported, putting students at severe safety risk during practical examinations.',
+    language: 'English',
     complainantType: 'Parent',
     dateOfReceipt: '2026-09-18',
     expectedDisposalDate: '2026-10-18',
+    lastActionType: 'Inspection Ordered',
     lastActionDate: '2026-10-24',
     lastActionSummary: 'Surprise inspection recommended; referred to Standing Hearing Committee (SHC).',
     nextActionRequired: 'Schedule SHC hearing in Eastern Regional Office.',
@@ -267,9 +274,11 @@ export const INITIAL_COMPLAINTS: Complaint[] = [
     priority: 'High',
     category: 'Faculty Shortage & Qualifications',
     description: 'Discrepancies identified in teacher-student cadre ratio for B.Pharm program. Three assistant professors allegedly hold unaccredited degrees.',
+    language: 'English',
     complainantType: 'Faculty',
     dateOfReceipt: '2026-09-25',
     expectedDisposalDate: '2026-10-25',
+    lastActionType: 'Documents Requested',
     lastActionDate: '2026-10-20',
     lastActionSummary: 'Verification letter dispatched to issuing university registrar.',
     nextActionRequired: 'Standing Committee review pending.',
@@ -288,9 +297,11 @@ export const INITIAL_COMPLAINTS: Complaint[] = [
     priority: 'Low',
     category: 'Misleading Advertisement',
     description: 'Promotional brochures and website claiming 100% international placement packages with false corporate tie-ups not recognized by AICTE placement guidelines.',
+    language: 'English',
     complainantType: 'Student',
     dateOfReceipt: '2026-10-10',
     expectedDisposalDate: '2026-11-10',
+    lastActionType: 'Notice Issued',
     lastActionDate: '2026-10-19',
     lastActionSummary: 'Institution asked to submit certified copy of previous 3 years placement audit reports.',
     nextActionRequired: 'Pending institutional reply.',
@@ -302,12 +313,23 @@ export const INITIAL_COMPLAINTS: Complaint[] = [
 export const INITIAL_ALERTS: OverlapAlert[] = [
   {
     id: 'ALT-2026-088',
-    newComplaintId: 'C-205', // The SIH demo case to be confirmed
+    newComplaintId: 'C-205',
     matchedComplaintId: 'C-101',
     institutionId: 'INST-001',
     institutionName: 'ABC Engineering College',
     aictePermanentId: '1-43598711',
     overallScore: 88,
+    level1CoActivity: true,
+    level2RelatedIssue: {
+      isRelated: true,
+      reason: 'Both complaints allege illegal extra fee collection beyond state fee committee caps under laboratory and development heads.',
+      score: 88
+    },
+    level3ActionConflict: {
+      hasConflict: true,
+      conflictType: 'Pre-Action Warning: Document Request Duplication',
+      details: 'Regulation Bureau already requested 3-year fee ledgers on 18 Oct 2026. Avoid issuing separate redundant document demand from PGRC.'
+    },
     breakdown: {
       institutionScore: 40,
       semanticScore: 26,
@@ -317,12 +339,11 @@ export const INITIAL_ALERTS: OverlapAlert[] = [
     },
     classification: 'Related Complaints (Coordination Required)',
     explanation: [
-      'Verified AICTE Permanent ID match: 1-43598711 (Full 40.0 pts)',
-      'High semantic similarity (86.7%) between descriptions: Unauthorized fee demands vs unapproved fee collection (26.0 pts)',
-      'Matching complaint category: Unauthorized Fees / Capitation (14.0 pts)',
-      'Temporal proximity: Complaints received within 12 days of each other (8.0 pts)'
+      'Level 1: Co-Activity active across Regulation Bureau (RB) and PGRC.',
+      'Level 2: 86.7% semantic alignment on fee extortion terminology (40 pts ID + 26 pts NLP).',
+      'Level 3: Regulation Bureau has already dispatched document demand AICTE/RB/2026/0842.'
     ],
-    sharedKeywords: ['fees', 'unauthorized', 'prescribed', 'students', 'collection', 'development', 'clearance'],
+    sharedKeywords: ['fees', 'unauthorized', 'prescribed', 'students', 'collection', 'development', 'shulk'],
     status: 'Pending Review',
     createdAt: '2026-10-26T14:15:00Z'
   }
@@ -344,6 +365,15 @@ export const INITIAL_COORDINATION_GROUPS: CoordinationGroup[] = [
     ],
     leadBureau: 'Regulation Bureau (RB)',
     participatingBureaus: ['Regulation Bureau (RB)', 'Approval Bureau (AB)'],
+    sharedDocuments: [
+      {
+        id: 'DOC-001',
+        documentTitle: 'Faculty Cadre Salary Ledger (12 Months)',
+        requestedByBureau: 'Regulation Bureau (RB)',
+        requestDate: '2025-09-18',
+        status: 'Received & Verified'
+      }
+    ],
     createdBy: 'Smt. Sunita Rao (Director, RB)',
     createdAt: '2025-09-15T11:00:00Z',
     updatedAt: '2025-10-10T16:30:00Z',
@@ -358,8 +388,8 @@ export const INITIAL_ACTIONS: CaseAction[] = [
     timestamp: '2026-10-14T10:15:00Z',
     actor: 'Smt. Sunita Rao',
     actorBureau: 'Regulation Bureau (RB)',
-    actionType: 'Official Assigned',
-    details: 'Complaint registered and assigned to Desk Officer 4 (Fees & Capitation Desk).'
+    actionType: 'Notice Issued',
+    details: 'Complaint registered and assigned to Fees & Capitation Desk.'
   },
   {
     id: 'ACT-002',
@@ -367,17 +397,8 @@ export const INITIAL_ACTIONS: CaseAction[] = [
     timestamp: '2026-10-18T14:30:00Z',
     actor: 'Smt. Sunita Rao',
     actorBureau: 'Regulation Bureau (RB)',
-    actionType: 'Notice Issued',
-    details: 'Show cause notice AICTE/RB/SCN/2026/842 dispatched via speed post & email to Chairman, ABC Engineering College.'
-  },
-  {
-    id: 'ACT-003',
-    complaintId: 'C-101',
-    timestamp: '2026-10-21T09:45:00Z',
-    actor: 'Regulation Bureau (RB)',
-    actorBureau: 'Regulation Bureau (RB)',
-    actionType: 'Status Change',
-    details: 'Status updated from Under Review to Under Process.'
+    actionType: 'Documents Requested',
+    details: 'Formal order dispatched demanding 3-year fee ledger and bank statement submission from college management.'
   }
 ];
 
@@ -388,34 +409,28 @@ export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
     actor: 'Dr. Rajiv Kumar',
     actorRole: 'AICTE Senior Management (Member Secretary)',
     actorBureau: 'AICTE HQ Executive',
-    action: 'Executive Council Overlap Health Audit',
+    action: 'Executive Cross-Bureau Sync',
     entityType: 'Security',
-    entityId: 'SYS-AUDIT-Q3',
-    details: 'Generated monthly inter-bureau cross-referencing audit report across RB, PGRC, and AB.',
+    entityId: 'SYS-SYNC-Q3',
+    details: 'Cross-Bureau coordination layer synchronized records across RB, PGRC, and AB.',
     hash: 'SHA256:7f3b89a01e4281f9b30d12e4'
   },
   {
     id: 'AUD-9010',
     timestamp: '2026-10-26T14:15:22Z',
-    actor: 'System Overlap Engine',
+    actor: 'AICTE Samanvay Overlap Engine',
     actorRole: 'System Daemon',
     actorBureau: 'AICTE HQ Executive',
-    action: 'Potential Overlap Detection Event',
+    action: 'Level 1 & 2 Overlap Alert',
     entityType: 'OverlapAlert',
     entityId: 'ALT-2026-088',
-    details: 'Triggered overlap alert between C-205 (PGRC) and existing C-101 (RB) with 88.0% composite score.',
+    details: 'Triggered 3-level overlap alert between C-205 (PGRC) and existing C-101 (RB) on ABC Engineering College.',
     hash: 'SHA256:5c829e1f409bc2456aa109d7'
-  },
-  {
-    id: 'AUD-9009',
-    timestamp: '2026-10-21T09:45:00Z',
-    actor: 'Smt. Sunita Rao',
-    actorRole: 'Regulation Bureau Officer (RB-Lead)',
-    actorBureau: 'Regulation Bureau (RB)',
-    action: 'Case Status Modification',
-    entityType: 'Complaint',
-    entityId: 'C-101',
-    details: 'Updated status to Under Process following dispatch of formal Show Cause Notice.',
-    hash: 'SHA256:4d712e098a5142cb911002ac'
   }
 ];
+
+// Sample Synthetic CSV data for the 1-Click Ingestion demonstration
+export const SYNTHETIC_CSV_DATA = `CaseID,ReferenceNumber,AICTEPermanentID,InstitutionName,Bureau,Category,Description,Language,DateReceived,Priority
+C-205,AICTE/PGRC/2026/0491,1-43598711,ABC Engineering College,Public Grievance Redressal Cell (PGRC),Unauthorized Fees / Capitation,"College students allege that administration is forcing extra Rs. 40,000 collection for lab and exam clearances beyond fee regulatory committee caps without giving official receipts.",English,2026-10-26,High
+C-206,AICTE/RB/2026/0912,1-28114092,Vivekananda Institute of Technology & Science,Regulation Bureau (RB),Non-Refund of Caution Deposit,"M.Tech 2025 batch caution deposit refund pending. Management says accounts audit pending.",Hinglish,2026-10-25,Medium
+C-207,AICTE/AB/2026/0129,1-10948211,Delhi National Institute of Engineering & Management,Approval Bureau (AB),Faculty Shortage & Qualifications,"MBA program faculty cadre ratio short by 4 associate professors during 2026 EoA inspection.",English,2026-10-24,Low`;
