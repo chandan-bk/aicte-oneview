@@ -17,6 +17,7 @@ export const DashboardView: React.FC = () => {
 
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
   const [csvResult, setCsvResult] = useState<CsvParseResult | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,16 +33,34 @@ export const DashboardView: React.FC = () => {
   const roCount = complaints.filter(c => c.receivingBureau.includes('Regional')).length;
 
   const handleFileProcess = (file: File) => {
-    if (!file.name.endsWith('.csv')) {
-      alert('Please select a valid .csv file.');
+    setFileError(null);
+    setCsvResult(null);
+
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setFileError('Invalid file type. Please upload a standard comma-separated (.csv) file.');
       return;
     }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setFileError('File exceeds 2MB limit for client-side demonstration.');
+      return;
+    }
+
     const reader = new FileReader();
+    reader.onerror = () => {
+      setFileError('Failed to read the file from disk. Please check permissions.');
+    };
     reader.onload = (e) => {
       const content = e.target?.result as string;
-      if (content) {
+      if (!content || content.trim().length === 0) {
+        setFileError('The uploaded CSV file is empty.');
+        return;
+      }
+      try {
         const result = importUploadedCsv(content);
         setCsvResult(result);
+      } catch (err: any) {
+        setFileError(`CSV processing error: ${err?.message || 'Malformed file syntax.'}`);
       }
     };
     reader.readAsText(file);
@@ -169,6 +188,14 @@ export const DashboardView: React.FC = () => {
                 className="hidden"
               />
             </div>
+
+            {/* File Error Feedback */}
+            {fileError && (
+              <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-xs text-rose-800 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{fileError}</span>
+              </div>
+            )}
 
             {/* Ingestion Results Feedback */}
             {csvResult && (

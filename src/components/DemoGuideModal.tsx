@@ -153,7 +153,7 @@ export const DemoGuideModal: React.FC = () => {
       step: 4,
       title: '3-Level Overlap Engine Fires Alert',
       subtitle: 'Samanvay Demo — Step 4 (L1, L2 & L3 Overlap)',
-      desc: 'L1 detects co-activity (RB + PGRC on same college). L2 confirms related issue via multilingual semantic matching. L3 warns of duplicate document demand risk.',
+      desc: 'L1 detects co-activity (RB + PGRC on same college). L2 confirms related issue via multilingual rule-based synonym matching. L3 warns of duplicate document demand risk.',
       actionLabel: 'Inspect 3-Level Match',
       onAction: () => setCurrentView('new-complaint')
     },
@@ -169,7 +169,7 @@ export const DemoGuideModal: React.FC = () => {
       step: 6,
       title: 'Coordination Order & Shared Document Registry',
       subtitle: 'Samanvay Demo — Step 6 (Link Never Merge)',
-      desc: 'Link cases under CG-008 without merging case IDs. Add documents to Shared Registry so college is asked once. Review updated dashboard & immutable audit trail.',
+      desc: 'Link cases without merging case IDs. Add documents to Shared Registry so college is asked once. Review updated dashboard & verify cryptographic audit trail.',
       actionLabel: 'Execute Coordination Order',
       onAction: () => setCurrentView('coordination')
     }

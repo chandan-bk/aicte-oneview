@@ -84,7 +84,7 @@ export const PresentationDeckView: React.FC = () => {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-amber-400 font-bold">•</span>
-                <span><strong>Overlay, not a replacement:</strong> imports cases from existing systems with no re-entry (CSV/Excel prototype).</span>
+                <span><strong>Overlay, not a replacement:</strong> imports cases from existing systems with no re-entry (CSV ingestion prototype; Excel/DB adapters on roadmap).</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-amber-400 font-bold">•</span>
@@ -150,7 +150,7 @@ export const PresentationDeckView: React.FC = () => {
               Methodology Flow
             </span>
             <div className="p-3 bg-slate-900 rounded-lg border border-slate-700 font-mono text-[11px] text-slate-200 overflow-x-auto whitespace-nowrap">
-              CSV/Excel import (API-ready) → Validate → Institution resolution → L1 co-activity → L2 related issue → L3 action conflict → Alert with reasons → Pre-action check → Coordination Workspace → Dashboard · SLA · Audit trail
+              CSV File Ingestion (API-ready) → Validate → Institution resolution → L1 co-activity → L2 related issue → L3 action conflict → Alert with reasons → Pre-action check → Coordination Workspace → Dashboard · SLA · Audit trail
             </div>
           </div>
 
@@ -179,7 +179,7 @@ export const PresentationDeckView: React.FC = () => {
       bullets: [
         'Architecture: Overlay design on top of existing RB and PGRC systems with zero re-entry.',
         'Matching: Rule-based overlap engine with multilingual synonym dictionary (English, Hindi, Hinglish); embeddings planned for pilot.',
-        'Flow: CSV/Excel import → Validate → Institution resolution → L1 → L2 → L3 → Alert.',
+        'Flow: CSV File Ingestion → Strict Validation → Institution resolution → L1 → L2 → L3 → Alert.',
         'Pre-action check: flags recorded prior Bureau actions before notice dispatch.',
         'Coordination Workspace: links cases (never merge), proposes lead Bureau, shared document registry.',
         'Prototype (demonstrated): CSV upload/parser with validation, Institution 360, L1-L3 rule engine, Pre-Action Check, SHA-256 audit chaining.',

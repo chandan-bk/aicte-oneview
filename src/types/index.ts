@@ -81,9 +81,9 @@ export interface Complaint {
   complainantType: 'Student' | 'Faculty' | 'Parent' | 'Whistleblower / Anonymous' | 'Public Body';
   dateOfReceipt: string;
   expectedDisposalDate: string;
-  lastActionType: ActionVocabulary;
-  lastActionDate: string;
-  lastActionSummary: string;
+  lastActionType?: ActionVocabulary;
+  lastActionDate?: string;
+  lastActionSummary?: string;
   nextActionRequired: string;
   supportingDocsCount: number;
   coordinationGroupId?: string;

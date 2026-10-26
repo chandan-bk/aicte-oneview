@@ -75,14 +75,19 @@ export const Header: React.FC = () => {
             </span>
           </button>
 
-          {/* User Role Switcher Dropdown */}
-          <div className="flex items-center bg-slate-800/80 rounded-lg p-1 border border-slate-700">
+          {/* User Role Switcher Dropdown (Demonstration Feature) */}
+          <div className="flex items-center bg-slate-800/80 rounded-lg p-1 border border-slate-700" title="Demonstration Role Switcher: Demonstrates bureau perspectives without requiring separate logins">
             <div className="w-7 h-7 rounded-md bg-[#134074] flex items-center justify-center font-bold text-xs text-amber-300 mr-2">
               {currentUser.avatarInitials}
             </div>
             <div className="text-left pr-2">
-              <div className="text-[11px] font-medium text-slate-200 leading-tight">
-                {currentUser.name}
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] font-medium text-slate-200 leading-tight">
+                  {currentUser.name}
+                </span>
+                <span className="text-[9px] bg-slate-700 text-slate-300 px-1 rounded font-bold">
+                  Demo Role
+                </span>
               </div>
               <div className="text-[9px] text-amber-400 truncate max-w-[130px]">
                 {currentUser.bureau}

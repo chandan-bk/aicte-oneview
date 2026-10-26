@@ -30,6 +30,7 @@ export const CoordinationWorkspaceView: React.FC = () => {
 
   const [newDirective, setNewDirective] = useState('');
   const [isCommitted, setIsCommitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'comparison' | 'preaction' | 'sharedDocs'>('comparison');
   const [newDocTitle, setNewDocTitle] = useState('');
 
@@ -40,20 +41,27 @@ export const CoordinationWorkspaceView: React.FC = () => {
   const case1 = complaints.find(c => c.id === alert?.matchedComplaintId) || complaints[0];
   const case2 = complaints.find(c => c.id === alert?.newComplaintId) || complaints[complaints.length - 1];
 
-  // Associated coordination group if already linked
-  const currentGroup = coordinationGroups.find(g => g.institutionId === alert?.institutionId);
+  // Associated coordination group strictly linked to this alert
+  const currentGroup = alert?.coordinationGroupId 
+    ? coordinationGroups.find(g => g.id === alert.coordinationGroupId)
+    : undefined;
 
   const handleCommitDecision = () => {
     if (!alert) return;
-    recordCoordinationDecision(
+    setErrorMessage(null);
+    const success = recordCoordinationDecision(
       alert.id,
       decision,
       remarks,
       directives,
       leadBureau
     );
-    setIsCommitted(true);
-    setSihDemoStep(6);
+    if (success) {
+      setIsCommitted(true);
+      setSihDemoStep(6);
+    } else {
+      setErrorMessage(`Cannot execute decision: Alert ${alert.id} has already been reviewed & coordinated, or is no longer available.`);
+    }
   };
 
   const handleTriggerPreActionSimulation = (action: ActionVocabulary) => {
@@ -315,14 +323,35 @@ export const CoordinationWorkspaceView: React.FC = () => {
               </span>
             </div>
 
+            {errorMessage && (
+              <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-xs text-rose-800 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
             {isCommitted || alert?.status === 'Reviewed & Coordinated' ? (
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-emerald-900 space-y-2 animate-in zoom-in-95">
                 <div className="flex items-center gap-2 font-bold text-sm">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                  <span>Coordination Order Executed & Linked under CG-008</span>
+                  <span>
+                    {currentGroup || alert?.coordinationGroupId 
+                      ? `Coordination Docket Linked under ${currentGroup?.id || alert?.coordinationGroupId}`
+                      : 'Independent Case Disposition Confirmed'}
+                  </span>
                 </div>
                 <p className="text-xs leading-relaxed text-emerald-800">
-                  Cases ({case1?.id} & {case2?.id}) are linked under Coordination Group <strong>CG-008</strong>. The Regulation Bureau will lead statutory proceedings with PGRC evidentiary support. Both Bureaus retain full docket authority.
+                  {currentGroup || alert?.coordinationGroupId ? (
+                    <>
+                      Cases ({case1?.id} & {case2?.id}) are linked under Coordination Group <strong>{currentGroup?.id || alert?.coordinationGroupId}</strong>. 
+                      {leadBureau} will lead statutory inter-bureau proceedings with full shared evidence access. Both Bureaus retain statutory independence.
+                    </>
+                  ) : (
+                    <>
+                      Cases ({case1?.id} & {case2?.id}) have been reviewed and classified as separate independent inquiries. 
+                      No joint coordination group is created; both Bureaus proceed with independent disposal with zero duplicate interference.
+                    </>
+                  )}
                 </p>
                 <div className="pt-2 flex items-center gap-3">
                   <button
@@ -331,12 +360,14 @@ export const CoordinationWorkspaceView: React.FC = () => {
                   >
                     View Cryptographic Audit Log
                   </button>
-                  <button
-                    onClick={() => setActiveTab('sharedDocs')}
-                    className="px-4 py-2 bg-purple-700 hover:bg-purple-600 text-white rounded-lg text-xs font-bold transition shadow"
-                  >
-                    Open Shared Document Registry
-                  </button>
+                  {currentGroup && (
+                    <button
+                      onClick={() => setActiveTab('sharedDocs')}
+                      className="px-4 py-2 bg-purple-700 hover:bg-purple-600 text-white rounded-lg text-xs font-bold transition shadow"
+                    >
+                      Open Shared Document Registry
+                    </button>
+                  )}
                   <button
                     onClick={() => setCurrentView('dashboard')}
                     className="px-4 py-2 bg-white border border-emerald-300 text-emerald-800 rounded-lg text-xs font-semibold hover:bg-emerald-100 transition"
@@ -355,7 +386,7 @@ export const CoordinationWorkspaceView: React.FC = () => {
                     {[
                       { value: 'Confirmed Related Cases', label: 'Confirmed Related Cases (Link & Coordinate)', desc: 'Distinct complaints with common underlying nexus; requires joint action.' },
                       { value: 'Duplicate Records Confirmed', label: 'Duplicate Records Confirmed', desc: 'Identical complainant & grievance; combine evidentiary dossier.' },
-                      { value: 'Separate Cases', label: 'Separate Independent Cases', desc: 'Complaints concern same college but distinct unrelated matters.' },
+                      { value: 'Separate Cases', label: 'Separate Independent Cases', desc: 'Complaints concern same college but distinct unrelated matters; maintain separate files.' },
                       { value: 'Institution Identity Mismatch', label: 'Institution Identity Mismatch', desc: 'Different institutions share similar name; split records.' },
                       { value: 'Further Review Required', label: 'Further Review Required', desc: 'Awaiting clarity before inter-bureau linking.' }
                     ].map((opt) => (
@@ -401,12 +432,12 @@ export const CoordinationWorkspaceView: React.FC = () => {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Assigned Coordination Group ID
+                      Assigned Coordination Docket Ref
                     </label>
                     <input
                       type="text"
                       readOnly
-                      value="CG-008: ABC Engineering Fee Irregularities Joint Action"
+                      value={currentGroup ? `${currentGroup.id}: ${currentGroup.title}` : `Generated Upon Submission (e.g. CG-${Date.now().toString().slice(-4)})`}
                       className="w-full bg-slate-100 border border-slate-300 rounded-lg text-xs py-2 px-3 font-mono font-bold text-slate-800"
                     />
                   </div>
@@ -414,7 +445,7 @@ export const CoordinationWorkspaceView: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    3. Official Review Remarks (Recorded to Immutable Audit Trail) *
+                    3. Official Review Remarks (Recorded to Hash-Chained Audit Trail) *
                   </label>
                   <textarea
                     rows={3}
@@ -539,70 +570,82 @@ export const CoordinationWorkspaceView: React.FC = () => {
               </p>
             </div>
             <span className="text-xs font-mono bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full font-bold">
-              Group: CG-008
+              {currentGroup ? `Docket: ${currentGroup.id}` : 'No Group Linked Yet'}
             </span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-600 uppercase font-semibold text-[10px] tracking-wider border-b border-slate-200">
-                <tr>
-                  <th className="py-2.5 px-3">Document Particulars</th>
-                  <th className="py-2.5 px-3">Requested By Bureau</th>
-                  <th className="py-2.5 px-3">Date Demanded</th>
-                  <th className="py-2.5 px-3">Verification Status</th>
-                  <th className="py-2.5 px-3 text-right">Access</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {currentGroup?.sharedDocuments.map(doc => (
-                  <tr key={doc.id} className="hover:bg-slate-50/80">
-                    <td className="py-2.5 px-3 font-semibold text-slate-800">
-                      {doc.documentTitle}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
-                        {doc.requestedByBureau}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-slate-500 font-mono text-[11px]">
-                      {doc.requestDate}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                        doc.status === 'Received & Verified' ? 'bg-emerald-100 text-emerald-800' :
-                        'bg-amber-100 text-amber-800'
-                      }`}>
-                        {doc.status}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right">
-                      <button className="text-xs text-blue-600 hover:underline font-medium">
-                        View Dossier
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {!currentGroup ? (
+            <div className="p-8 text-center bg-slate-50 border border-dashed border-slate-300 rounded-xl space-y-2">
+              <FolderPlus className="w-8 h-8 text-slate-400 mx-auto" />
+              <p className="font-bold text-xs text-slate-700">No Coordination Group Linked to this Overlap Alert</p>
+              <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                Review the overlapping cases in the <strong>Case Comparison</strong> tab and commit a coordination decision (such as <em>Confirmed Related Cases</em>) to create a joint docket and activate the Shared Document Registry.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-600 uppercase font-semibold text-[10px] tracking-wider border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-3">Document Particulars</th>
+                      <th className="py-2.5 px-3">Requested By Bureau</th>
+                      <th className="py-2.5 px-3">Date Demanded</th>
+                      <th className="py-2.5 px-3">Verification Status</th>
+                      <th className="py-2.5 px-3 text-right">Access</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {currentGroup.sharedDocuments.map(doc => (
+                      <tr key={doc.id} className="hover:bg-slate-50/80">
+                        <td className="py-2.5 px-3 font-semibold text-slate-800">
+                          {doc.documentTitle}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">
+                            {doc.requestedByBureau}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-500 font-mono text-[11px]">
+                          {doc.requestDate}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                            doc.status === 'Received & Verified' ? 'bg-emerald-100 text-emerald-800' :
+                            'bg-amber-100 text-amber-800'
+                          }`}>
+                            {doc.status}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-right">
+                          <button className="text-xs text-blue-600 hover:underline font-medium">
+                            View Dossier
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-          {/* Add Document Input */}
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex gap-2">
-            <input
-              type="text"
-              placeholder="Request new document under shared coordination registry..."
-              value={newDocTitle}
-              onChange={(e) => setNewDocTitle(e.target.value)}
-              className="flex-1 bg-white border border-slate-300 rounded-lg text-xs py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-            <button
-              onClick={handleAddSharedDoc}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg transition"
-            >
-              Add to Registry
-            </button>
-          </div>
+              {/* Add Document Input */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Request new document under shared coordination registry..."
+                  value={newDocTitle}
+                  onChange={(e) => setNewDocTitle(e.target.value)}
+                  className="flex-1 bg-white border border-slate-300 rounded-lg text-xs py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <button
+                  onClick={handleAddSharedDoc}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg transition"
+                >
+                  Add to Registry
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

@@ -114,7 +114,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const computedHash = computeAuditHash(timestamp, currentUser.name, action, entityId, details, prevHash);
 
     const newLog: AuditLogEntry = {
-      id: `AUD-${Date.now().toString().slice(-4)}`,
+      id: `AUD-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`,
       timestamp,
       actor: currentUser.name,
       actorRole: currentUser.role,
@@ -133,7 +133,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Register a new complaint with 3-Level Overlap analysis
   const registerComplaint = (complaintData: Partial<Complaint>) => {
     const institution = institutions.find(i => i.id === complaintData.institutionId) || institutions[0];
-    const generatedId = `C-${Math.floor(200 + Math.random() * 90)}`;
+    const generatedId = `C-${Date.now().toString().slice(-4)}-${Math.floor(100 + Math.random() * 900)}`;
     const refNum = `AICTE/${complaintData.receivingBureau?.includes('PGRC') ? 'PGRC' : 'RB'}/2026/0${Math.floor(500 + Math.random() * 400)}`;
 
     const fullComplaint: Complaint = {
@@ -237,15 +237,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const alert = alerts.find(a => a.id === alertId);
     if (!alert) return false;
 
-    // Check if already reviewed
+    // Guard: Check if already reviewed
     if (alert.status === 'Reviewed & Coordinated') {
       return false;
     }
 
-    const groupNum = `CG-00${coordinationGroups.length + 8}`;
+    // Special workflow for "Separate Cases": Keep complaints independent without creating a joint coordination group
+    if (decision === 'Separate Cases') {
+      setAlerts(prev => prev.map(a => {
+        if (a.id === alertId) {
+          return {
+            ...a,
+            status: 'Reviewed & Coordinated',
+            reviewedBy: currentUser.name,
+            reviewedAt: new Date().toISOString()
+          };
+        }
+        return a;
+      }));
+
+      setInstitutions(prev => prev.map(inst => {
+        if (inst.id === alert.institutionId) {
+          return {
+            ...inst,
+            activeOverlaps: Math.max(0, inst.activeOverlaps - 1)
+          };
+        }
+        return inst;
+      }));
+
+      addAuditLog(
+        'Separation Decision Recorded',
+        'OverlapAlert',
+        alert.id,
+        `Official decision 'Separate Cases' executed by ${currentUser.name}. Cases ${alert.matchedComplaintId} & ${alert.newComplaintId} determined to be distinct matters. No coordination group created; cases remain independent.`
+      );
+
+      return true;
+    }
+
+    const groupNum = `CG-${Date.now().toString().slice(-4)}-${Math.floor(10 + Math.random() * 90)}`;
     const newGroup: CoordinationGroup = {
       id: groupNum,
-      title: `${alert.institutionName} - Inter-Bureau Fee Overlap Coordination`,
+      title: `${alert.institutionName} - Inter-Bureau Coordination Docket`,
       institutionId: alert.institutionId,
       institutionName: alert.institutionName,
       aictePermanentId: alert.aictePermanentId,
@@ -254,20 +288,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       remarks,
       jointDirectives: directives,
       leadBureau,
-      participatingBureaus: ['Regulation Bureau (RB)', 'Public Grievance Redressal Cell (PGRC)'],
+      participatingBureaus: Array.from(new Set([
+        leadBureau,
+        currentUser.bureau as BureauType,
+        'Regulation Bureau (RB)',
+        'Public Grievance Redressal Cell (PGRC)'
+      ])),
       sharedDocuments: [
         {
-          id: `DOC-${Date.now().toString().slice(-3)}`,
-          documentTitle: 'Student Fee Payment Receipts & Affidavits (PGRC Docket)',
+          id: `DOC-${Date.now().toString().slice(-4)}-A`,
+          documentTitle: 'Student Fee Payment Receipts & Bank Statements',
           requestedByBureau: 'Public Grievance Redressal Cell (PGRC)',
-          requestDate: '2026-10-26',
+          requestDate: new Date().toISOString().split('T')[0],
           status: 'Received & Verified'
         },
         {
-          id: `DOC-${Date.now().toString().slice(-3)}-B`,
-          documentTitle: '3-Year Audited Balance Sheet & Fee Ledger (RB Docket)',
+          id: `DOC-${Date.now().toString().slice(-4)}-B`,
+          documentTitle: 'Audited Institutional Balance Sheet & Fee Ledger',
           requestedByBureau: 'Regulation Bureau (RB)',
-          requestDate: '2026-10-18',
+          requestDate: new Date().toISOString().split('T')[0],
           status: 'Pending Institution'
         }
       ],
@@ -337,7 +376,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addSharedDocumentToGroup = (groupId: string, docTitle: string) => {
     const newDoc: SharedDocumentRegistryItem = {
-      id: `DOC-${Date.now().toString().slice(-4)}`,
+      id: `DOC-${Date.now().toString().slice(-4)}-${Math.floor(100 + Math.random() * 900)}`,
       documentTitle: docTitle,
       requestedByBureau: currentUser.bureau as BureauType,
       requestDate: new Date().toISOString().split('T')[0],
@@ -369,6 +408,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     remarks: string,
     actionType: ActionVocabulary = 'Notice Issued'
   ) => {
+    const target = complaints.find(c => c.id === complaintId);
+    const prevStatus = target?.status || 'Unknown';
+
     setComplaints(prev => prev.map(c => {
       if (c.id === complaintId) {
         return {
@@ -383,13 +425,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
 
     const newAction: CaseAction = {
-      id: `ACT-${Date.now().toString().slice(-4)}`,
+      id: `ACT-${Date.now().toString().slice(-4)}-${Math.floor(100 + Math.random() * 900)}`,
       complaintId,
       timestamp: new Date().toISOString(),
       actor: currentUser.name,
       actorBureau: currentUser.bureau,
       actionType,
-      details: `Status transitioned to ${status}. Remarks: ${remarks}`
+      details: `Status transitioned from '${prevStatus}' to '${status}'. Remarks: ${remarks}`
     };
     setCaseActions(prev => [newAction, ...prev]);
 
@@ -397,7 +439,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       'Case Status Modified',
       'Complaint',
       complaintId,
-      `Action: ${actionType} -> Status: ${status} by ${currentUser.name}`
+      `Action: ${actionType} -> Status transitioned from '${prevStatus}' to '${status}' by ${currentUser.name}. Remarks: ${remarks}`
     );
   };
 
@@ -431,8 +473,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (addedForInst > 0) {
           return {
             ...inst,
-            totalComplaints: inst.totalComplaints + 1,
-            pendingComplaints: inst.pendingComplaints + 1,
+            totalComplaints: inst.totalComplaints + addedForInst,
+            pendingComplaints: inst.pendingComplaints + addedForInst,
             activeOverlaps: inst.activeOverlaps + alertsForInst
           };
         }
@@ -442,7 +484,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addAuditLog(
         'CSV File Ingestion Completed',
         'Security',
-        `CSV-BATCH-${Date.now().toString().slice(-4)}`,
+        `CSV-BATCH-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`,
         `Ingested ${parseResult.accepted.length} complaints. Rejected ${parseResult.rejected.length} invalid rows.`
       );
     }

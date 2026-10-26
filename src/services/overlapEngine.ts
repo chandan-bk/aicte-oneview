@@ -15,7 +15,7 @@ const STOPWORDS = new Set([
   'hai', 'hain', 'ka', 'ki', 'ke', 'ko', 'se', 'me', 'mein', 'par', 'tha', 'thi', 'the', 'kya', 'aur', 'bhi', 'liye'
 ]);
 
-// Multilingual Semantic Synonym Dictionary (English, Hindi, Hinglish)
+// Multilingual Synonym Dictionary (English, Hindi, Hinglish) for Rule-Based Similarity
 const MULTILINGUAL_SYNONYM_MAP: Record<string, string[]> = {
   'fee': ['fees', 'charges', 'money', 'tuition', 'capitation', 'cost', 'funds', 'receipt', 'payment', 'collection', 'amount', 'amounts', 'financial', 'shulk', 'shulka', 'paisa', 'paise', 'rupaye', 'daam'],
   'unauthorized': ['unapproved', 'illegal', 'illicit', 'excessive', 'beyond', 'extortion', 'overcharging', 'unwarranted', 'exorbitant', 'zyada', 'anuchit', 'ghair-kanuni', 'extra'],
@@ -36,7 +36,8 @@ export function tokenize(text: string): string[] {
 }
 
 /**
- * Multilingual Semantic Similarity Evaluator (English, Hindi & Hinglish)
+ * Rule-Based Multilingual Synonym Similarity Evaluator (English, Hindi & Hinglish)
+ * Uses synonym expansion and weighted token overlap.
  */
 export function calculateSemanticSimilarity(text1: string, text2: string): { score: number; sharedTerms: string[] } {
   const tokens1 = tokenize(text1);
@@ -92,8 +93,8 @@ export function calculateSemanticSimilarity(text1: string, text2: string): { sco
 /**
  * 3-Level Overlap Engine:
  * - Level 1: Co-Activity (Rules, always on: same institution, multiple Bureaus active)
- * - Level 2: Related Issue (Multilingual semantic vectors & grievance domain)
- * - Level 3: Conflicting or Duplicate Actions (Rules over action vocabulary)
+ * - Level 2: Related Issue (Multilingual synonym overlap & grievance domain)
+ * - Level 3: Conflicting or Duplicate Actions (Rules over action vocabulary, evaluated ONLY if L2 nexus exists)
  */
 export function evaluate3LevelOverlap(
   newComplaint: Partial<Complaint>,
@@ -132,7 +133,7 @@ export function evaluate3LevelOverlap(
     const isDifferentBureau = newComplaint.receivingBureau !== existing.receivingBureau;
     const level1CoActivity = Boolean(isDifferentBureau && institutionScore >= 35);
 
-    // Component 2: Multilingual Semantic Description Similarity (Max 30.0 pts)
+    // Component 2: Multilingual Rule-Based Textual Overlap (Max 30.0 pts)
     const { score: simScore, sharedTerms } = calculateSemanticSimilarity(
       newComplaint.description,
       existing.description
@@ -141,15 +142,18 @@ export function evaluate3LevelOverlap(
 
     // Component 3: Category Similarity (Max 15.0 pts)
     let categoryScore = 0;
+    let isCategoryRelated = false;
     if (newComplaint.category && existing.category) {
       if (newComplaint.category === existing.category) {
         categoryScore = 15.0;
+        isCategoryRelated = true;
       } else {
         const feeCats = ['Unauthorized Fees / Capitation', 'Non-Refund of Caution Deposit'];
         if (feeCats.includes(newComplaint.category) && feeCats.includes(existing.category)) {
           categoryScore = 10.0;
+          isCategoryRelated = true;
         } else {
-          categoryScore = 3.0;
+          categoryScore = 0.0;
         }
       }
     }
@@ -175,43 +179,60 @@ export function evaluate3LevelOverlap(
     ));
 
     // Level 2: Related Issue Flag
+    // An issue is substantively related ONLY if there is demonstrable issue nexus (category or textual similarity)
+    const hasIssueNexus = isCategoryRelated || simScore >= 0.35;
+    const isSubstantivelyRelated = hasIssueNexus && totalScore >= 50;
+
     const level2RelatedIssue = {
-      isRelated: totalScore >= 55,
-      reason: totalScore >= 75 
-        ? `High semantic & domain nexus in fee collection allegations across ${newComplaint.receivingBureau} and ${existing.receivingBureau}`
-        : `Moderate overlap under common institution record`,
+      isRelated: isSubstantivelyRelated,
+      reason: isSubstantivelyRelated
+        ? (totalScore >= 75 
+            ? `High semantic & domain nexus in fee/allegation structure across ${newComplaint.receivingBureau} and ${existing.receivingBureau}`
+            : `Moderate domain overlap under common institution record`)
+        : `Different grievance categories concerning the same institution (independent matters)`,
       score: totalScore
     };
 
     // Level 3: Action Conflict / Duplication Check
+    // Critical Guard: Only evaluate Level 3 Action Conflict if Level 2 Related Issue is confirmed!
     let level3ActionConflict = undefined;
-    if (existing.lastActionType === 'Documents Requested' || existing.lastActionType === 'Notice Issued') {
-      level3ActionConflict = {
-        hasConflict: true,
-        conflictType: 'Potential Duplicate Document Request',
-        details: `${existing.receivingBureau} already executed '${existing.lastActionType}' on ${existing.lastActionDate} (${existing.referenceNumber}). Proceeding independently may duplicate institutional compliance burden.`
-      };
-    } else if (existing.status === 'Disposed' && newComplaint.status !== 'Disposed') {
-      level3ActionConflict = {
-        hasConflict: true,
-        conflictType: 'Risk of Contradictory Ruling',
-        details: `Related case ${existing.id} was previously marked Disposed by ${existing.receivingBureau}. Ensure new grievance findings do not contradict earlier closure findings.`
-      };
+    if (isSubstantivelyRelated && existing.lastActionType) {
+      if (existing.lastActionType === 'Documents Requested') {
+        level3ActionConflict = {
+          hasConflict: true,
+          conflictType: 'Potential Duplicate Document Request',
+          details: `${existing.receivingBureau} already executed 'Documents Requested' on ${existing.lastActionDate || 'earlier date'} (${existing.referenceNumber}). Proceeding independently may duplicate institutional compliance burden.`
+        };
+      } else if (existing.lastActionType === 'Notice Issued') {
+        level3ActionConflict = {
+          hasConflict: true,
+          conflictType: 'Risk of Duplicate Show Cause Notice',
+          details: `${existing.receivingBureau} already dispatched 'Notice Issued' on ${existing.lastActionDate || 'earlier date'} (${existing.referenceNumber}). Parallel notices on related issues should be coordinated.`
+        };
+      } else if (existing.status === 'Disposed' && newComplaint.status !== 'Disposed') {
+        level3ActionConflict = {
+          hasConflict: true,
+          conflictType: 'Risk of Contradictory Ruling',
+          details: `Related case ${existing.id} was previously marked Disposed by ${existing.receivingBureau}. Ensure new grievance findings do not contradict earlier closure findings.`
+        };
+      }
     }
 
     // Classification Outcome
     let classification: OverlapClassification = 'Same Institution but Unrelated';
     if (institutionScore < 30) {
       classification = 'Uncertain Institution Match';
-    } else if (totalScore >= 80) {
+    } else if (isSubstantivelyRelated && totalScore >= 80) {
       classification = 'Related Complaints (Coordination Required)';
-    } else if (totalScore >= 55) {
+    } else if (isSubstantivelyRelated && totalScore >= 50) {
       classification = 'Related Complaints (Coordination Required)';
+    } else {
+      classification = 'Same Institution but Unrelated';
     }
 
     const explanation: string[] = [
       `Level 1 Co-Activity: Active inquiries in both ${newComplaint.receivingBureau} and ${existing.receivingBureau}`,
-      `Level 2 Nexus: Verified Permanent ID ${existing.aictePermanentId} (${institutionScore} pts) + ${(simScore * 100).toFixed(0)}% semantic alignment (${semanticScore} pts)`,
+      `Level 2 Nexus: Verified Permanent ID ${existing.aictePermanentId} (${institutionScore} pts) + ${(simScore * 100).toFixed(0)}% rule-based textual similarity (${semanticScore} pts)`,
       `Shared concepts: [${sharedTerms.slice(0, 5).join(', ')}]`
     ];
 
@@ -220,7 +241,7 @@ export function evaluate3LevelOverlap(
     }
 
     const alert: OverlapAlert = {
-      id: `ALT-${Date.now().toString().slice(-4)}`,
+      id: `ALT-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`,
       newComplaintId: newComplaint.id || 'C-NEW',
       matchedComplaintId: existing.id,
       institutionId: existing.institutionId,
@@ -256,7 +277,9 @@ export function evaluate3LevelOverlap(
 /**
  * Headline Innovation: Pre-Action Check
  * Evaluates whether an intended action (e.g. Notice, Document Request, Inspection)
- * duplicates or conflicts with actions already recorded by other Bureaus on the same institution.
+ * duplicates or conflicts with actions already recorded by other Bureaus on related complaints.
+ * 
+ * Advisory Notice: Flags recorded prior actions. Officials retain statutory authority.
  */
 export function checkPreActionAdvisory(
   targetAction: ActionVocabulary,
@@ -268,6 +291,15 @@ export function checkPreActionAdvisory(
   );
 
   for (const existing of institutionComplaints) {
+    if (!existing.lastActionType) continue;
+
+    // Check if complaints share substantive issue nexus before raising conflict advisory
+    const isRelated = targetComplaint.category === existing.category ||
+                      calculateSemanticSimilarity(targetComplaint.description, existing.description).score > 0.35 ||
+                      (targetComplaint.coordinationGroupId && targetComplaint.coordinationGroupId === existing.coordinationGroupId);
+
+    if (!isRelated) continue;
+
     if (targetAction === 'Documents Requested' && existing.lastActionType === 'Documents Requested') {
       return {
         hasConflict: true,
@@ -275,8 +307,8 @@ export function checkPreActionAdvisory(
         targetAction,
         conflictingBureau: existing.receivingBureau,
         conflictingCaseId: existing.id,
-        message: `${existing.receivingBureau} already requested fee ledgers and deposit receipts on ${existing.lastActionDate} under case ${existing.id}.`,
-        priorActionDate: existing.lastActionDate,
+        message: `${existing.receivingBureau} already requested fee/institutional documentation on ${existing.lastActionDate || 'earlier'} under case ${existing.id}. (Advisory: Officials retain statutory authority).`,
+        priorActionDate: existing.lastActionDate || 'Recorded Prior Action',
         recommendedAction: 'Coordinate request via Shared Document Registry to ask the institution only once.'
       };
     }
@@ -288,8 +320,8 @@ export function checkPreActionAdvisory(
         targetAction,
         conflictingBureau: existing.receivingBureau,
         conflictingCaseId: existing.id,
-        message: `A formal Show Cause Notice was already dispatched by ${existing.receivingBureau} on ${existing.lastActionDate}.`,
-        priorActionDate: existing.lastActionDate,
+        message: `A formal Show Cause Notice was already dispatched by ${existing.receivingBureau} on ${existing.lastActionDate || 'earlier'} regarding related allegations. (Advisory: Officials retain statutory authority).`,
+        priorActionDate: existing.lastActionDate || 'Recorded Prior Action',
         recommendedAction: 'Consolidate allegations into Regulation Bureau formal hearing docket rather than issuing parallel notice.'
       };
     }
@@ -301,8 +333,8 @@ export function checkPreActionAdvisory(
         targetAction,
         conflictingBureau: existing.receivingBureau,
         conflictingCaseId: existing.id,
-        message: `Physical surprise inspection was recently authorized by ${existing.receivingBureau}.`,
-        priorActionDate: existing.lastActionDate,
+        message: `Physical surprise inspection was recently authorized by ${existing.receivingBureau} on related matters. (Advisory: Officials retain statutory authority).`,
+        priorActionDate: existing.lastActionDate || 'Recorded Prior Action',
         recommendedAction: 'Depute joint nominee to existing inspection team from Regional Office.'
       };
     }
